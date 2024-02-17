@@ -1,7 +1,7 @@
 # pizzeria
 A basic chat app written in C++ using unix sockets. 
 
-- [Features](#pizzeria)
+- [Features](#features)
 - [Building](#building)
 
 # Features
