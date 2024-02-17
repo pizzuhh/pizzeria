@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-luuid
+CXXFLAGS=-luuid -Wall
 
 BUILD=./build
 
