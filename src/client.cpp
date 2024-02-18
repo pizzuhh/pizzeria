@@ -150,6 +150,7 @@ int main()
     send(client_socket, uid, 1024, 0);
     #ifdef CRYPTO
     recv(client_socket, pubkey, 1024, 0);
+    // send client's public key so we can encrypt the message later
     send(client_socket, publicKey, 1024, 0);
     // printf("%s\n", pubkey);
     #endif

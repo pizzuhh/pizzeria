@@ -1,3 +1,10 @@
+/*
+TODOs:
+!1. finish the encryption
+!2. clean up the code
+3. make commands work (like ban, kick)
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -55,7 +62,7 @@ RSA* LoadPublicKeyFromString(const char* publicKeyStr)
     BIO* bio = BIO_new_mem_buf(publicKeyStr, -1);
     if (bio != NULL) 
     {
-        rsa = PEM_read_bio_RSA_PUBKEY(bio, NULL, NULL, NULL);
+        rsa = PEM_read_bio_RSAPublicKey(bio, NULL, NULL, NULL);
         BIO_free(bio);
     }
     return rsa;
@@ -108,7 +115,7 @@ struct client
     bool valid = true;
     #ifdef CRYPTO
     char  plainTextKey[1024];
-    RSA* publicKey = LoadPublicKeyFromString(plainTextKey);
+    RSA* publicKey;
     #endif 
 };
 
@@ -232,7 +239,10 @@ void *server_client(void *arg)
 
 void send_message(char *msg, char *sender)
 {
-    for(const auto& client:clients)
+    /*
+         TODO: since every client will have different RSA key we must encrypt 
+TODO     the message with each of those keys and send it to the correct client */
+    for(const auto& client : clients)
     {
         if (strcmp(client->uid, sender))
         {
@@ -244,6 +254,7 @@ void send_message(char *msg, char *sender)
 }
 void send_message(char *msg)
 {
+    // same goes for this
     for(const auto& client:clients)
     {
         char* out = new char[1024];
@@ -269,11 +280,15 @@ void* handle_client(void* arg)
     #ifdef CRYPTO
     // send public key
     send(cl->fd, key2, strlen((const char*)key2), 0);
+
     // receive public key
     char clientPublicKey[1024];
     recv(cl->fd, cl->plainTextKey, 1024, 0);
     printf("%s\n", cl->plainTextKey);
+    cl->publicKey = LoadPublicKeyFromString((const char*)cl->plainTextKey);
+    // load private key for decryption
     RSA* pkey = LoadPrivateKeyFromString((const char*)key1);
+
     #endif
     
     while(cl->valid)
