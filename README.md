@@ -16,3 +16,7 @@ Firstly make sure you have [libuuid](https://linux.die.net/man/3/libuuid). Clone
 
 # Windows support?
 Windows is currently not supported. It'll take some time to port the code to windows and to make sure that everything works. If you want to use it on windows, use [WSL(Windows Subsystem for Linux)](https://learn.microsoft.com/en-us/windows/wsl/)
+
+# V2 (beta)
+encryption works only from client to server (not server to client), issues with custom port fixed.
+You can build server and client without encryption (not recommended)
