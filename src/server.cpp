@@ -13,6 +13,88 @@
 #include <uuid/uuid.h>
 #include <algorithm>
 
+#ifdef CRYPTO
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
+#include <openssl/err.h>
+unsigned char *key1, *key2;
+void GenerateKeyPair(unsigned char** privateKey, unsigned char** publicKey)
+{
+    RSA* rsa = RSA_generate_key(2048, 65537, NULL,  NULL);
+    // private key
+    BIO* priv_bio = BIO_new(BIO_s_mem());
+    PEM_write_bio_RSAPrivateKey(priv_bio, rsa, NULL, NULL, 0, NULL, NULL);
+    int privkeyLen = BIO_pending(priv_bio);
+    *privateKey = (unsigned char*)calloc(privkeyLen + 1, 1);
+    BIO_read(priv_bio, *privateKey, privkeyLen);
+
+    // public key
+    BIO* pub_bio = BIO_new(BIO_s_mem());
+    PEM_write_bio_RSAPublicKey(pub_bio, rsa);
+    int pubkeyLen = BIO_pending(pub_bio);
+    *publicKey = (unsigned char*)calloc(pubkeyLen + 1, 1);
+    BIO_read(pub_bio, *publicKey, pubkeyLen);
+
+    // printf("%s\n\n%s", *privateKey, *publicKey);
+}
+
+RSA* LoadPrivateKeyFromString(const char* privateKeyStr) 
+{
+    RSA* rsa = NULL;
+    BIO* bio = BIO_new_mem_buf(privateKeyStr, -1);
+    if (bio != NULL) 
+    {
+        rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
+        BIO_free(bio);
+    }
+    return rsa;
+}
+RSA* LoadPublicKeyFromString(const char* publicKeyStr) 
+{
+    RSA* rsa = NULL;
+    BIO* bio = BIO_new_mem_buf(publicKeyStr, -1);
+    if (bio != NULL) 
+    {
+        rsa = PEM_read_bio_RSA_PUBKEY(bio, NULL, NULL, NULL);
+        BIO_free(bio);
+    }
+    return rsa;
+}
+unsigned char* Decrypt(const unsigned char* msg, RSA* key)
+{
+    if (!key)
+    {
+        fprintf(stderr, "Private key is invalid!\n");
+        exit(1);
+    }
+    size_t len = RSA_size(key);
+    u_char* decrypted = (u_char*)malloc(RSA_size(key));
+    size_t dlen = RSA_private_decrypt(len, msg, decrypted, key, RSA_PKCS1_PADDING);
+    if (dlen == -1)
+    {
+        // Handle decryption error
+        fprintf(stderr, "Decryption failed!\n");
+        free(decrypted);
+        exit(1);
+    }
+    decrypted[dlen] = '\0';
+    return decrypted;
+}
+unsigned char* Encrypt(const unsigned char* msg, RSA* key)
+{
+    size_t len = strlen((const char*)msg);
+    if (!key)
+    {
+        fprintf(stderr, "Public key is invalid!\n");
+        exit(1);
+    }
+    unsigned char* encrypted = (unsigned char*)malloc(RSA_size(key));
+    RSA_public_encrypt(len, msg, encrypted, key, RSA_PKCS1_PADDING);
+    return encrypted;
+}
+#endif
+
+
 using std::vector;
 
 #define msleep(ms) usleep(ms * 1000);
@@ -24,6 +106,10 @@ struct client
     char uid[1024];
     sockaddr addr;
     bool valid = true;
+    #ifdef CRYPTO
+    char  plainTextKey[1024];
+    RSA* publicKey = LoadPublicKeyFromString(plainTextKey);
+    #endif 
 };
 
 vector<client*> clients;
@@ -38,12 +124,27 @@ void broken_pipe()
     fprintf(stderr, "Broken pipe has been detected! Could be that client has disconnected\n");
 }
 
+
+
 int main(void)
 {
+    #ifndef CRYPTO
+    fprintf(stderr, "SERVER IS RUNNING WITHOUT ENCRYPTION!\nTO USE ENCRYPTION REBUILD THE SERVER AND THE CLIENT!\n");
+    #endif
     signal(SIGPIPE, (sighandler_t)broken_pipe);
     int port = 0;
     printf("Enter port (the port must not be used by other process! Default port is 5524): ");
-    scanf("%5[^\n]", &port);
+    char input[7];
+    if (fgets(input, 6, stdin) != NULL)
+    {
+        input[7] = '\0';
+        if (input[0] == '\0')
+            port = 5524;
+        else
+        {
+            sscanf(input, "%d", &port);
+        }
+    }
     if (port == 0)
     {
         port = 5524;
@@ -72,11 +173,16 @@ int main(void)
     int last_id = 0;
     sockaddr cl_addr;
     int socklen = sizeof(cl_addr);
-    
+
+    #ifdef CRYPTO
+    // generate private-public key pair
+    GenerateKeyPair(&key1, &key2);
+    #endif
+    pthread_t adminClient;
+    pthread_create(&adminClient, 0, server_client, 0);
     while (true)
     {
         pthread_t p;
-        pthread_t adminClient;
         int cl_fd = accept(fd, (sockaddr*)&cl_addr, (socklen_t*)&socklen);
         if (cl_fd > 0)
         {
@@ -87,7 +193,7 @@ int main(void)
             clients.push_back(cl);
             pthread_t p;
             pthread_create(&p, 0, handle_client, (void*)cl);
-            pthread_create(&adminClient, 0, server_client, 0);
+            
 //            printf("Con: %d\n", clients.size());
         }
         else
@@ -95,7 +201,9 @@ int main(void)
     }
     
 }
-#define MAX_LEN 500
+#define MAX_LEN 1024
+
+
 
 void* parse_command(const std::string command)
 {
@@ -158,6 +266,16 @@ void* handle_client(void* arg)
     memcpy(cl->uid, uid_buff, 1024);
     printf(" with uid of: %s\n", cl->id);
     
+    #ifdef CRYPTO
+    // send public key
+    send(cl->fd, key2, strlen((const char*)key2), 0);
+    // receive public key
+    char clientPublicKey[1024];
+    recv(cl->fd, cl->plainTextKey, 1024, 0);
+    printf("%s\n", cl->plainTextKey);
+    RSA* pkey = LoadPrivateKeyFromString((const char*)key1);
+    #endif
+    
     while(cl->valid)
     {
         int bytes = recv(cl->fd, msg, MAX_LEN, 0);
@@ -165,8 +283,14 @@ void* handle_client(void* arg)
             return 0;
         if (!strncmp(msg, "#!CLOSE", 7))
             cl->valid = false;
+        #ifdef CRYPTO
+        unsigned char* dec = Decrypt((const u_char*)&msg, pkey);
+        printf("%s: %s\n", cl->uid, dec);
+        send_message((char*)dec, cl->uid);
+        #else
         printf("%s: %s\n", cl->uid, msg);
         send_message(msg, cl->uid);
+        #endif
     }
     vector<client*>::iterator it = std::find(clients.begin(), clients.end(), cl);
     if (it != clients.end())
