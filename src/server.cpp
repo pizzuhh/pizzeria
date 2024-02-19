@@ -261,7 +261,6 @@ void send_message(char *msg, char *sender)
             snprintf(out, 1024, "%s: %s", sender, msg);
             #ifdef CRYPTO
             unsigned char* encrypted = Encrypt((const unsigned char*)out, client->publicKey);
-            // printf("%s\n", client->plainTextKey);
             send(client->fd, encrypted, MAX_LEN, 0);
             #else
             send(client->fd, out, strlen(out), 0);
@@ -271,11 +270,16 @@ void send_message(char *msg, char *sender)
 }
 void send_message(char *msg)
 {
-    // same goes for this
     for(const auto& client:clients)
     {
+
         char* out = new char[1024];
+        #ifdef CRYPTO
+        unsigned char* encrypted = Encrypt((const unsigned char*)out, client->publicKey);
+        send(client->fd, encrypted, MAX_LEN, 0);
+        #else
         sprintf(out, "%s: %s", "[SERVER]", msg);
+        #endif
         send(client->fd, out, strlen(out), 0);
     }
 }
