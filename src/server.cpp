@@ -1,10 +1,3 @@
-/*
-TODOs:
-!1. finish the encryption
-!2. clean up the code
-3. make commands work (like ban, kick)
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
