@@ -238,7 +238,7 @@ void *server_client(void *arg)
         {
             parse_command(buff.substr(2));
         }
-        send_message(const_cast<char*>(buff.c_str()), "nul");
+        send_message(const_cast<char*>(buff.c_str()));
     }
     
     return nullptr;
