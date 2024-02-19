@@ -11,6 +11,7 @@ TODOs:
 #include <sys/socket.h>
 #include <vector>
 #include <unistd.h>
+#include <fcntl.h>
 #include <string>
 #include <string.h>
 #include <signal.h>
@@ -128,6 +129,19 @@ void send_message(char* msg, char* sender);
 void send_message(char *msg);
 void broken_pipe()
 {
+    for (client* cl : clients)
+    {
+        if (fcntl(cl->fd, F_GETFD) != -1 || errno == EBADF)
+        {
+            fprintf(stderr, "%s: Connection terminated!\n", cl->id);
+            vector<client*>::iterator it = std::find(clients.begin(), clients.end(), cl);
+            if (it != clients.end())
+            {
+                clients.erase(it);
+            }
+            delete cl;
+        }
+    }
     fprintf(stderr, "Broken pipe has been detected! Could be that client has disconnected\n");
 }
 
@@ -197,7 +211,7 @@ int main(void)
             client *cl = new client;
             cl->fd = cl_fd;
             cl->addr = cl_addr;
-            clients.push_back(cl);
+            //clients.push_back(cl);
             pthread_t p;
             pthread_create(&p, 0, handle_client, (void*)cl);
             
@@ -231,7 +245,7 @@ void *server_client(void *arg)
         {
             parse_command(buff.substr(2));
         }
-        send_message(const_cast<char*>(buff.c_str()));
+        send_message(const_cast<char*>(buff.c_str()), "nul");
     }
     
     return nullptr;
@@ -239,16 +253,19 @@ void *server_client(void *arg)
 
 void send_message(char *msg, char *sender)
 {
-    /*
-         TODO: since every client will have different RSA key we must encrypt 
-TODO     the message with each of those keys and send it to the correct client */
     for(const auto& client : clients)
     {
         if (strcmp(client->uid, sender))
         {
             char* out = new char[1024];
-            sprintf(out, "%s: %s", sender, msg);
+            snprintf(out, 1024, "%s: %s", sender, msg);
+            #ifdef CRYPTO
+            unsigned char* encrypted = Encrypt((const unsigned char*)out, client->publicKey);
+            // printf("%s\n", client->plainTextKey);
+            send(client->fd, encrypted, MAX_LEN, 0);
+            #else
             send(client->fd, out, strlen(out), 0);
+            #endif
         }
     }
 }
@@ -290,7 +307,7 @@ void* handle_client(void* arg)
     RSA* pkey = LoadPrivateKeyFromString((const char*)key1);
 
     #endif
-    
+    clients.push_back(cl);
     while(cl->valid)
     {
         int bytes = recv(cl->fd, msg, MAX_LEN, 0);
