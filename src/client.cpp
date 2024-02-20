@@ -172,9 +172,7 @@ int main()
 
 void *rcv(void *arg)
 {
-    #ifdef CRYPTO
     RSA* privkey = LoadPrivateKeyFromString((const char*)privateKey);
-    #endif
     char *buff = new char[MAX_LEN];
     while (running)
     {

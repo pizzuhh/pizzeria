@@ -1,3 +1,4 @@
 /build/
-/releases/
 /v*/
+/RELEASE/
+/.vscode/
