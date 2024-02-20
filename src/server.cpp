@@ -267,13 +267,14 @@ void send_message(char *msg)
     {
 
         char* out = new char[1024];
+        sprintf(out, "%s: %s", "[SERVER]", msg);
         #ifdef CRYPTO
         unsigned char* encrypted = Encrypt((const unsigned char*)out, client->publicKey);
         send(client->fd, encrypted, MAX_LEN, 0);
         #else
-        sprintf(out, "%s: %s", "[SERVER]", msg);
-        #endif
         send(client->fd, out, strlen(out), 0);
+        #endif
+        
     }
 }
 
