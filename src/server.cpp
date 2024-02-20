@@ -298,7 +298,6 @@ void* handle_client(void* arg)
     // receive public key
     char clientPublicKey[1024];
     recv(cl->fd, cl->plainTextKey, 1024, 0);
-    printf("%s\n", cl->plainTextKey);
     cl->publicKey = LoadPublicKeyFromString((const char*)cl->plainTextKey);
     // load private key for decryption
     RSA* pkey = LoadPrivateKeyFromString((const char*)key1);
