@@ -283,13 +283,11 @@ void* handle_client(void* arg)
     client *cl = (client*)arg;
     char id_buff[1024];
     recv(cl->fd, id_buff, 1024, 0);
-    memcpy(cl->id, id_buff, 1024);
-    printf("client %s: has connected", cl->id);
-    
+    memcpy(cl->id, id_buff, 1024); 
     char uid_buff[1024];
     recv(cl->fd, uid_buff, 1024, 0);
     memcpy(cl->uid, uid_buff, 1024);
-    printf(" with uid of: %s\n", cl->id);
+    printf("client %s: has connected with uid of: %s\n", cl->id, cl->id);
     
     #ifdef CRYPTO
     // send public key
