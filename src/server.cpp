@@ -14,6 +14,7 @@
 #include <uuid/uuid.h>
 #include <algorithm>
 #include <limits.h>
+#include <stdarg.h>
 
 #ifdef CRYPTO
 #include <openssl/rsa.h>
@@ -177,7 +178,8 @@ void *handle_client(void *arg);
 /*server admin client*/
 void *server_client(void *arg);
 void send_message(char *msg, char *sender);
-void send_message(char *msg);
+void send_message(const char *msg);
+void fsend_message(char *fmt, ...);
 void broken_pipe()
 {
     for (client *cl : clients)
@@ -197,6 +199,17 @@ void broken_pipe()
 }
 
 void segfault_handler(int signo);
+void cls(int)
+{
+    send_message("Server has stopped");
+    send_message("Do not send messages to this server");
+    for (client* cl: clients)
+    {
+        delete cl;
+    }
+    printf("exited...\nyou can now press enter");
+    exit(0);
+}
 
 int main(void)
 {
@@ -204,6 +217,7 @@ int main(void)
     fprintf(stderr, "SERVER IS RUNNING WITHOUT ENCRYPTION!\nTO USE ENCRYPTION REBUILD THE SERVER AND THE CLIENT!\n");
 #endif
     signal(SIGPIPE, (sighandler_t)broken_pipe);
+    signal(SIGINT, (sighandler_t)cls);
     int port = 0;
     printf("Enter port (the port must not be used by other process! Default port is 5524): ");
     char input[7];
@@ -303,16 +317,16 @@ void *server_client(void *arg)
 
 void send_message(char *msg, char *sender)
 {
+    char *out = new char[1024];
+    snprintf(out, 1024, "%s: %s", sender, msg);
+    packet p;
+    strncpy(p.data, "MSG", 4);
+    strncpy(p.data, out, MAX_LEN);
+    char* s = p.serialize();
     for (const auto &client : clients)
     {
         if (strcmp(client->uid, sender))
         {
-            char *out = new char[1024];
-            snprintf(out, 1024, "%s: %s", sender, msg);
-            packet p;
-            strncpy(p.data, "MSG", 4);
-            strncpy(p.data, out, MAX_LEN);
-            char* s = p.serialize();
 #ifdef CRYPTO
             unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
             send(client->fd, encrypted, MAX_LEN, 0);
@@ -321,18 +335,19 @@ void send_message(char *msg, char *sender)
 #endif
         }
     }
+    free(s);
+    delete[] out;
 }
-void send_message(char *msg)
+void send_message(const char *msg)
 {
+    char *out = new char[1024];
+    sprintf(out, "%s: %s", "[SERVER]", msg);
+    packet p;
+    strncpy(p.data, "MSG", 4);
+    strncpy(p.data, out, MAX_LEN);
+    char* s = p.serialize();
     for (const auto &client : clients)
-    {
-
-        char *out = new char[1024];
-        sprintf(out, "%s: %s", "[SERVER]", msg);
-        packet p;
-        strncpy(p.data, "MSG", 4);
-        strncpy(p.data, out, MAX_LEN);
-        char* s = p.serialize();
+    {   
 #ifdef CRYPTO
         unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
         send(client->fd, encrypted, MAX_LEN, 0);
@@ -340,6 +355,37 @@ void send_message(char *msg)
         send(client->fd, s, strlen(out), 0);
 #endif
     }
+    free(s);
+    delete[] out;
+}
+
+void fsend_message(const char *format, ...)
+{
+    char *out = new char[MAX_LEN];
+    char *tmp = new char[MAX_LEN];
+
+    va_list args;  // Define a variable argument list
+    va_start(args, format);  // Initialize the argument list
+
+    // Use vsnprintf to format the string with variable arguments
+    vsnprintf(tmp, MAX_LEN, format, args);
+
+    va_end(args);  // Clean up the argument list
+    sprintf(out, "[SERVER]: %s", tmp);
+    packet p("MSG", out);
+    char *s = p.serialize();
+    for (const auto &client : clients)
+    {
+#ifdef CRYPTO
+        unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+        send(client->fd, encrypted, MAX_LEN, 0);
+#else
+        send(client->fd, s, strlen(s), 0);
+#endif
+    }
+    free(s);
+    delete[] out;  
+    delete[] tmp;
 }
 
 void *handle_client(void *arg)
@@ -379,7 +425,11 @@ void *handle_client(void *arg)
         unsigned char* d = Decrypt((const u_char*)data, s_privkey);
         p.deserialize((const char*)d);
         if (!strncmp(p.type, "CLS", 3))
+        {
             cl->valid = false;
+            fsend_message("%s: has disconnected", cl->uid);
+            break;
+        }
         // printf("%p\n", p->data);
 /*         strncpy(msg, p.data, MAX_LEN);
         unsigned char *dec = Decrypt((const unsigned char*)&msg, s_privkey); */

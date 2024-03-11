@@ -173,7 +173,7 @@ void term()
     running = false;
     packet p;
     strncpy(p.type, "CLS", 3);
-    strncpy(p.data, "", MAX_LEN);
+    strncpy(p.data, "DISCONNECTED", MAX_LEN);
     char* s = p.serialize();
     u_char* enc = Encrypt((const u_char*)s, s2c_pubkey);
     send(client_socket, enc, sizeof(packet), 0);
