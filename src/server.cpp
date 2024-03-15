@@ -1,162 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <vector>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string>
-#include <string.h>
-#include <signal.h>
-#include <errno.h>
-#include <iostream>
-#include <pthread.h>
-#include <uuid/uuid.h>
-#include <algorithm>
-#include <limits.h>
-#include <stdarg.h>
+/*
+server.cpp 
 
-#ifdef CRYPTO
-#include <openssl/rsa.h>
-#include <openssl/pem.h>
-#include <openssl/err.h>
+This file contains the code for the server side
 
-unsigned char *private_key_gen, *public_key_gen;
-RSA *s_pubkey, *s_privkey;
-void GenerateKeyPair(unsigned char **privateKey, unsigned char **publicKey)
-{
-    RSA *rsa = RSA_generate_key(2048, 65537, NULL, NULL);
-    // private key
-    BIO *priv_bio = BIO_new(BIO_s_mem());
-    PEM_write_bio_RSAPrivateKey(priv_bio, rsa, NULL, NULL, 0, NULL, NULL);
-    int privkeyLen = BIO_pending(priv_bio);
-    *privateKey = (unsigned char *)calloc(privkeyLen, 1);
-    BIO_read(priv_bio, *privateKey, privkeyLen);
+*/
 
-    // public key
-    BIO *pub_bio = BIO_new(BIO_s_mem());
-    PEM_write_bio_RSAPublicKey(pub_bio, rsa);
-    int pubkeyLen = BIO_pending(pub_bio);
-    *publicKey = (unsigned char *)calloc(pubkeyLen, 1);
-    BIO_read(pub_bio, *publicKey, pubkeyLen);
-
-    // printf("%s\n\n%s", *privateKey, *publicKey);
-}
-
-RSA *LoadPrivateKeyFromString(const char *privateKeyStr)
-{
-    RSA *rsa = NULL;
-    BIO *bio = BIO_new_mem_buf(privateKeyStr, -1);
-    if (bio != NULL)
-    {
-        rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
-        BIO_free(bio);
-    }
-    return rsa;
-}
-RSA *LoadPublicKeyFromString(const char *publicKeyStr)
-{
-    RSA *rsa = NULL;
-    BIO *bio = BIO_new_mem_buf(publicKeyStr, -1);
-    if (bio != NULL)
-    {
-        rsa = PEM_read_bio_RSAPublicKey(bio, NULL, NULL, NULL);
-        BIO_free(bio);
-    }
-    return rsa;
-}
-unsigned char* Decrypt(const unsigned char* msg, RSA* key)
-{
-    if (!key)
-    {
-        fprintf(stderr, "Private key is invalid!\n");
-        exit(1);
-    }
-    size_t len = RSA_size(key);
-    u_char* decrypted = (u_char*)malloc(RSA_size(key));
-    size_t dlen = RSA_private_decrypt(len, msg, decrypted, key, RSA_PKCS1_PADDING);
-    if (dlen == -1)
-    {
-        // Handle decryption error
-        fprintf(stderr, "Decryption failed!\n");
-        free(decrypted);
-        exit(1);
-    }
-    decrypted[dlen] = '\0';
-    return decrypted;
-}
-
-
-unsigned char *Encrypt(const unsigned char *msg, RSA *key)
-{
-    size_t len = strlen((const char *)msg);
-    if (!key)
-    {
-        fprintf(stderr, "Public key is invalid!\n");
-        exit(1);
-    }
-    unsigned char *encrypted = (unsigned char *)malloc(RSA_size(key));
-    RSA_public_encrypt(len, msg, encrypted, key, RSA_PKCS1_PADDING);
-    return encrypted;
-}
-#endif
-
-#define MAX_LEN 1024
-struct packet
-{
-    char type[4];
-    char data[MAX_LEN];
-    packet(const char *type, char *data)
-    {
-        strncpy(this->type, type, 3);
-        this->type[3] = '\0';
-        strncpy(this->data, data, MAX_LEN);
-    }
-    packet(const char *type)
-    {
-        if (type)
-        {
-            strncpy(this->type, type, 3);
-            this->type[3] = '\0';
-        }
-    }
-    packet(){}
-    char* serialize()
-    {
-        char* buffer = (char*)malloc(sizeof(packet) + sizeof("\xff"));
-        sprintf(buffer, "%s\xFF%s", this->type, this->data);
-        return buffer;
-    }
-    void deserialize(const char* in)
-    {
-        // Find the position of the delimiter '\xff'
-        const char* delimiter = strchr(in, '\xff');
-    
-        // Ensure the delimiter is found and calculate the length
-        if (delimiter != nullptr)
-        {
-            size_t typeLength = delimiter - in;
-            size_t dataLength = strlen(delimiter + 1);
-    
-            // Copy type and data with appropriate lengths
-            strncpy(this->type, in, typeLength);
-            this->type[typeLength] = '\0'; // Null-terminate the type
-    
-            strncpy(this->data, delimiter + 1, dataLength);
-            this->data[dataLength] = '\0'; // Null-terminate the data
-        }
-        else
-        {
-            // Handle the case where the delimiter is not found or the format is invalid
-            // You may throw an exception, set default values, or handle it as appropriate for your application.
-            strncpy(type, in, 3);
-            fprintf(stderr, "Invalid input format in deserialize\n");
-        }
-    }
-};
+#include "helper.hpp"
 
 using std::vector;
-
+// sleep for miliseconds
 #define msleep(ms) usleep(ms * 1000);
 struct client
 {
@@ -174,12 +26,15 @@ struct client
 
 vector<client *> clients;
 
+//client
 void *handle_client(void *arg);
 /*server admin client*/
 void *server_client(void *arg);
+// send message
 void send_message(char *msg, char *sender);
 void send_message(const char *msg);
 void fsend_message(char *fmt, ...);
+// handle broken pipe
 void broken_pipe()
 {
     for (client *cl : clients)
@@ -195,10 +50,12 @@ void broken_pipe()
             delete cl;
         }
     }
-    fprintf(stderr, "Broken pipe has been detected! Could be that client has disconnected\n");
+    fprintf(stderr, "Broken pipe has been detected! (this shouldn't happen?) Could be that client has disconnected\n");
 }
 
+// handle segfault
 void segfault_handler(int signo);
+// handle server closing
 void cls(int)
 {
     send_message("Server has stopped");
@@ -211,8 +68,10 @@ void cls(int)
     exit(0);
 }
 
+// main function
 int main(void)
 {
+    // warn if the server is not running with encryption
 #ifndef CRYPTO
     fprintf(stderr, "SERVER IS RUNNING WITHOUT ENCRYPTION!\nTO USE ENCRYPTION REBUILD THE SERVER AND THE CLIENT!\n");
 #endif
@@ -235,6 +94,9 @@ int main(void)
     {
         port = 5524;
     }
+    /*
+    following code creates a socket, binds to it and listens for connections
+    */
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1)
     {
@@ -280,7 +142,6 @@ int main(void)
             cl->fd = cl_fd;
             cl->addr = cl_addr;
             // clients.push_back(cl);
-            pthread_t p;
             pthread_create(&p, 0, handle_client, (void *)cl);
 
             //            printf("Con: %d\n", clients.size());
@@ -296,7 +157,6 @@ void *parse_command(const std::string command)
     return 0;
 }
 
-// should finish this
 void *server_client(void *arg)
 {
     std::string buff;
@@ -314,7 +174,6 @@ void *server_client(void *arg)
 
     return nullptr;
 }
-
 void send_message(char *msg, char *sender)
 {
     char *out = new char[1024];
@@ -358,7 +217,6 @@ void send_message(const char *msg)
     free(s);
     delete[] out;
 }
-
 void fsend_message(const char *format, ...)
 {
     char *out = new char[MAX_LEN];
@@ -390,14 +248,18 @@ void fsend_message(const char *format, ...)
 
 void *handle_client(void *arg)
 {
-    char msg[MAX_LEN] = {0};
+    // char msg[MAX_LEN] = {0};
+
+    // get client info
     client *cl = (client *)arg;
     char id_buff[1024];
     recv(cl->fd, id_buff, 1024, 0);
     memcpy(cl->id, id_buff, 1024);
+
     char uid_buff[1024];
     recv(cl->fd, uid_buff, 1024, 0);
     memcpy(cl->uid, uid_buff, 1024);
+
     printf("client %s: has connected with uid of: %s\n", cl->id, cl->id);
 
 #ifdef CRYPTO
@@ -427,14 +289,24 @@ void *handle_client(void *arg)
         if (!strncmp(p.type, "CLS", 3))
         {
             cl->valid = false;
+            printf("%s: has disconnected\n", cl->uid);
             fsend_message("%s: has disconnected", cl->uid);
             break;
         }
-        // printf("%p\n", p->data);
-/*         strncpy(msg, p.data, MAX_LEN);
-        unsigned char *dec = Decrypt((const unsigned char*)&msg, s_privkey); */
-        printf("%s: %s\n", cl->uid, p.data);
-        send_message((char *)p.data, cl->uid);
+        else if(!strncmp(p.type, "MSG", 3))
+        {
+            printf("%s: %s\n", cl->uid, p.data);
+            send_message((char *)p.data, cl->uid);
+        }
+        else if(!strncmp(p.type, "HRT", 3))
+        {
+            const char* cur_time = std::to_string(time(0)).c_str();
+            if (!strcmp(p.data, cur_time))
+            {
+                // printf("Check passed\n");
+            }
+        }
+        
 #else
         /*         printf("%s: %s\n", cl->uid, msg);*/
         if (!strncmp(p.type, "MSG", 3))
@@ -445,6 +317,8 @@ void *handle_client(void *arg)
         else if (!strncmp(p.type, "CLS", 3))
         {
             cl->valid = false;
+            fsend_message("%s: has disconnected", cl->uid);
+            break;
         }
 #endif
     }
@@ -456,10 +330,12 @@ void *handle_client(void *arg)
     delete cl;
     return 0;
 }
+
 void segfault_handler(int signo)
 {
     // Print a message indicating the segmentation fault
     send_message((char*)"Server crashed!");
+    cls(-1);
     // Continue with the default signal handler for SIGSEGV
     signal(SIGSEGV, SIG_DFL);
     raise(SIGSEGV);
