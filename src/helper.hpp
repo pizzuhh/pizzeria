@@ -255,7 +255,7 @@ struct web_client_t
     }
     int send_response(const char* status, const std::string headers, const char* content)
     {
-        char *buff = (char*)malloc((KiB(5) + strlen(content)) * sizeof(char));
+        char *buff = (char*)malloc((KiB(3) + strlen(content)) * sizeof(char));
         size_t content_len = strlen(content);
         if (!headers.empty() && headers.size() > 0)
             sprintf(buff, "HTTP/1.1 %s\r\n%s\r\nContent-Length: %d\r\n\r\n%s", status, headers.c_str(), content_len, content);
@@ -351,8 +351,9 @@ class server
     private:
         serverinfo info;
         loop_fun loopfun;
-        uint port;
+        
     public:
+        uint port;
         server(const unsigned int port, loop_fun loopfun) : port(port), loopfun(loopfun)
         {
             if (port == 0)

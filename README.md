@@ -3,7 +3,7 @@ A basic chat app written in C++ using unix sockets.
 
 - [Features](#features)
 - [Building](#building)
-- [V2 release notes](#v2)
+- [V2-5 release notes](#v2-testing)
 
 # Features
  - multithreaded
@@ -21,7 +21,15 @@ make commands:
 # Windows support?
 Windows is currently not supported. It'll take some time to port the code to windows and to make sure that everything works. If you want to use it on windows, use [WSL(Windows Subsystem for Linux)](https://learn.microsoft.com/en-us/windows/wsl/)
 
-# V2
-### Added
-- RSA encryption (if there are any issues please make an issue)
-- Few bug fixes
+# V2.5-testing
+## Added
+- webUI for the client (a bit broken but works)
+## To be fixed
+- Server crashing when exiting from the webUI server
+## How to use the webUI?
+Firstly build the server, client and the webUI server (ENCRYPTION MUST BE ENABLED). Make sure the webui.html file is in the current working directory (run `pwd` to see it). Connect to the chat server and a random port will be opened (you'll see it on the terminal), now you can connect to the UI.
+### endpoints
+You can use the webui as API to send automated messages too! Here are some endpoints:
+- ``GET /`` - the UI
+- ``GET /get`` - to get the messages (a bit broken). If no message is received, empty response will be returned
+- ``POST /send`` - send a message
