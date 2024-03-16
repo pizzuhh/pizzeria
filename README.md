@@ -3,7 +3,7 @@ A basic chat app written in C++ using unix sockets.
 
 - [Features](#features)
 - [Building](#building)
-- [V2-5 release notes](#v2.5-testing)
+- [V2-5 release notes](#v25-testing)
 
 # Features
  - multithreaded
