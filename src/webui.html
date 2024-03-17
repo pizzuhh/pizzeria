@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pizzeria UI</title>
+    <style>
+        body {
+            font-family: inherit;
+        }
+        #message {
+            width: 500px;
+            font-size: large;
+        }
+        #messages {
+            width: 670px;
+            height: 270px;
+            border: solid;
+            border-color: black;
+            resize: both;
+            overflow-y: scroll; /* Changed to 'scroll' to always show vertical scrollbar */
+            overflow-x: hidden; /* Hide horizontal scrollbar */
+            padding: 2px;
+            white-space: pre-wrap; /* Preserve line breaks */
+        }
+    </style>
+</head>
+<body>
+    <h3>Public ID: $$PUUID$$</h3>
+    <p style="display: none;" id="port">$$PORT$$</p>
+    <textarea id="messages" readonly></textarea>
+    <div id="form">
+        <input type="text" id="message">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    <script>
+        let port = document.getElementById("port").textContent;
+
+        function fetchUpdates() {
+            fetch("http://localhost:" + port + "/get")
+            .then(response => response.text())
+            .then(data => updateDiv(data))
+            .catch(error => console.error('Error:', error));
+        }
+
+        function updateDiv(data) {
+            if (data) {
+                const textarea = document.getElementById('messages');
+                textarea.value += data + '\n';
+                textarea.scrollTop = textarea.scrollHeight; 
+            }
+        }
+
+        setInterval(fetchUpdates, 100);
+
+        if (port !== "$$PORT") {
+            function sendMessage() {
+                let data = document.getElementById("message").value;
+                if (data != "") {
+                    fetch("http://127.0.0.1:"+port+"/send", {
+                        method: "POST",
+                        body: data,
+                        headers: {"Content-Type": "text/plain"}
+                    })
+                    .then(response =>{console.log(response)});
+                    const textarea = document.getElementById('messages');
+                    textarea.value += "You: " + data + '\n';
+                    textarea.scrollTop = textarea.scrollHeight;
+                    document.getElementById("message").value = "";
+                }
+            }
+        } else {
+            console.error("Invalid port value");
+        }
+    </script>
+</body>
+</html>
