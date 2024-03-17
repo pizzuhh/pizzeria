@@ -1,11 +1,16 @@
 #include  "helper.hpp"
-
+/*Is client running?*/
 bool running = true;
+/*client socket FD*/
 int client_socket = 0;
+/*Threads*/
 pthread_t t_send, t_recv, t_hrt;
-char pubkey[1024];
-u_char *publicKey, *privateKey;
+/*public key in plaintext*/
 #ifdef CRYPTO
+char pubkey[1024];
+/*The public private key pair*/
+u_char *publicKey, *privateKey;
+
 RSA* s2c_pubkey;
 #endif
 
@@ -16,22 +21,35 @@ void term()
     close(client_socket);
     pthread_detach(t_recv); pthread_detach(t_send);
     exit(0); */
-    running = false;
-    packet p;
-    strncpy(p.type, "CLS", 3);
-    strncpy(p.data, "DISCONNECTED", MAX_LEN);
-    char* s = p.serialize();
-    u_char* enc = Encrypt((const u_char*)s, s2c_pubkey);
+    running = false; // disable the client
+    packet p; // packet
+    strncpy(p.type, "CLS", 3); // set the packet type to "CLS" -> CLOSE
+    strncpy(p.data, "DISCONNECTED", MAX_LEN); // set p.data
+    char* s = p.serialize(); // turn the packet to string
+    #ifdef CRYPTO // for encryption support
+    u_char* enc = Encrypt((const u_char*)s, s2c_pubkey); // encrypt the string
     send(client_socket, enc, sizeof(packet), 0);
+    #else 
+    send(crunlient_socket, s, sizeof(packet), 0);
+    #endif
+    // detach the threads
     pthread_detach(t_recv); pthread_detach(t_send);
-    putc('\r', stdin);
+    putc('\r', stdin); // idk?
+    // exit
     exit(0);
 }
-
+/*function to recive message from the server*/
 void* rcv(void* arg);
+/*function to send message to the server*/
 void* snd(void* arg);
+/*heart beat function. Sends a HRT packet to the server to verify if the client is valid.*/
 void* hrt(void* arg);
 
+/*Main function:
+ * generates key pairs
+ * connects to server
+ * sends required data
+ */
 int main()
 {
     #ifndef CRYPTO

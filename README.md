@@ -21,6 +21,22 @@ make commands:
 # Windows support?
 Windows is currently not supported. It'll take some time to port the code to windows and to make sure that everything works. If you want to use it on windows, use [WSL(Windows Subsystem for Linux)](https://learn.microsoft.com/en-us/windows/wsl/)
 
+# Custopm clients
+For now the original client is supported. In order to create a client you must:
+- Generate RSA key pairs, 2048bit with RSA_PKCS1_PADDING
+- Generate unique UUID for the device (mustn't change)
+- Generate unique UUID for the session (should be diferent everytime, or not)
+- Connect to the server 
+- Receive the public key from the server (if you want to support encryption)
+- Send the public key to the server (if you want to support encryption)
+## ALL OF THESE MUST BE DONE IN THE SAME ORDER (you can always check the source code of the original client)
+After that you need to create 3 threads:
+1. receiver (receive messages from the server)
+2. sender (send messages to the server)
+3. hearbeat (every second sned `HRT` packet to the server)
+### How to close the connection?
+When you close the connection send a `CLS` packet to the server, terminate all the threads and exit
+
 # V2.5-testing
 ## Added
 - webUI for the client (a bit broken but works)
