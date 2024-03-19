@@ -90,7 +90,7 @@ int main()
     }
 
     // send server info
-    const char* id    = cpu_uuid();
+    const char* id    = get_hw_uuid();
     const char* uid   = gen_uid();
     send(client_socket, id, 1024, 0);
     // msleep(10); // if something brakes uncomment this

@@ -69,30 +69,37 @@ void cls(int)
 }
 
 // main function
-int main(void)
+int main(int argc, char **argv)
 {
     // warn if the server is not running with encryption
-#ifndef CRYPTO
+    #ifndef CRYPTO
     fprintf(stderr, "SERVER IS RUNNING WITHOUT ENCRYPTION!\nTO USE ENCRYPTION REBUILD THE SERVER AND THE CLIENT!\n");
-#endif
+    #endif
     signal(SIGPIPE, (sighandler_t)broken_pipe);
     signal(SIGINT, (sighandler_t)cls);
     int port = 0;
-    printf("Enter port (the port must not be used by other process! Default port is 5524): ");
-    char input[7];
-    if (fgets(input, 6, stdin) != NULL)
+    if (strcmp(argv[1], "--default"))
     {
-        // input[7] = '\0';
-        if (input[0] == '\0')
-            port = 5524;
-        else
+        printf("Enter port (the port must not be used by other process! Default port is 5524): ");
+        char input[7];
+        if (fgets(input, 6, stdin) != NULL)
         {
-            sscanf(input, "%d", &port);
+            // input[7] = '\0';
+            if (input[0] == '\0')
+                port = 5524;
+            else
+            {
+                sscanf(input, "%d", &port);
+            }
+        }
+        if (port == 0)
+        {
+            port = 5524;
         }
     }
-    if (port == 0)
+    else 
     {
-        port = 5524;
+        port = 5524;  
     }
     /*
     following code creates a socket, binds to it and listens for connections
