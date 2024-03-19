@@ -80,7 +80,11 @@ int main(int argc, char **argv)
     int port = 0;
     if (argc > 2)
     {
-        if (strcmp(argv[1], "--default"))
+        if (!strcmp(argv[1], "--default-port"))
+        {
+            port = 5524;
+        }
+        else 
         {
             printf("Enter port (the port must not be used by other process! Default port is 5524): ");
             char input[7];
@@ -98,10 +102,6 @@ int main(int argc, char **argv)
             {
                 port = 5524;
             }
-        }
-        else 
-        {
-            port = 5524;  
         }
     }
     else
