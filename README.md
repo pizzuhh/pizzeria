@@ -3,7 +3,7 @@ A basic chat app written in C++ using unix sockets.
 
 - [Features](#features)
 - [Building](#building)
-- [V2-5 release notes](#v2-testing)
+- [V2.5 release notes](#v25)
 
 # Features
  - multithreaded
@@ -21,7 +21,7 @@ make commands:
 # Windows support?
 Windows is currently not supported. It'll take some time to port the code to windows and to make sure that everything works. If you want to use it on windows, use [WSL(Windows Subsystem for Linux)](https://learn.microsoft.com/en-us/windows/wsl/)
 
-# Custopm clients
+# Custom clients
 For now the original client is supported. In order to create a client you must:
 - Generate RSA key pairs, 2048bit with RSA_PKCS1_PADDING
 - Generate unique UUID for the device (mustn't change)
@@ -34,7 +34,7 @@ After that you need to create 3 threads:
 2. sender (send messages to the server)
 3. hearbeat (every second sned `HRT` packet to the server)
 
-# V2.5-testing
+# V2.5
 ## Added
 - webUI for the client (a bit broken but works)
 ## To be fixed
@@ -46,3 +46,8 @@ You can use the webui as API to send automated messages too! Here are some endpo
 - ``GET /`` - the UI
 - ``GET /get`` - to get the messages (a bit broken). If no message is received, empty response will be returned
 - ``POST /send`` - send a message
+## Docker image for the server
+If you want to run the server using docker:
+(the image will be uploaded to docker hub for now build it)
+run `docker build -t pizzeria-server .` and then `docker run -it --rm -p 5524:5524 pizzeria-server`
+Connect to the server on port 5524 or whatever port you choose (do not change the port from the server, only the one from docker!)
