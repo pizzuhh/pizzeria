@@ -78,7 +78,6 @@ int main(int argc, char **argv)
     signal(SIGPIPE, (sighandler_t)broken_pipe);
     signal(SIGINT, (sighandler_t)cls);
     int port = 0;
-    printf("%d\n", argc);
     if (argc >= 2)
     {
         if (!strcmp(argv[1], "--default-port"))
