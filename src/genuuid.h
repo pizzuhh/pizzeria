@@ -5,6 +5,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <string.h>
+#include <dirent.h>
 
 static std::string getCPUModelName() 
 {
@@ -32,7 +34,30 @@ static std::string getCPUModelName()
 
     return "Not found";
 }
-
+char* getMAC()
+{
+    // https://stackoverflow.com/questions/1779715/
+    DIR* NICs = opendir("/sys/class/net/");
+    struct dirent *dir;
+    while (dir = readdir(NICs))
+    {
+        if (dir->d_type == DT_LNK)
+        {
+            if (!strncmp(dir->d_name, "en", 2))
+            {
+                char path[MAX_INPUT+1];
+                char* mac = (char*)malloc(18 * sizeof(char));
+                snprintf(path, sizeof(path), "/sys/class/net/%s/address", dir->d_name);
+                FILE* f = fopen(path, "r");
+                size_t bytes = fread(mac, 1, 17, f);
+                fclose(f);
+                mac[bytes] = '\0';
+                return mac;
+            }
+        }
+    }
+    return "00:00:00:00:00:00";
+}
 char* cpu_uuid()
 {
     uuid_t cpu_uuid;
@@ -44,7 +69,22 @@ char* cpu_uuid()
     return buff;
 }
 
-
+char* get_hw_uuid()
+{
+    uuid_t mac_uuid;
+    char *mac = getMAC();
+    if (mac)
+    {
+        const unsigned char* ns = (const unsigned char*)"mac";
+        uuid_generate_md5(mac_uuid, ns, mac, strlen(mac));
+        char *buff = new char[1024];
+        uuid_unparse(mac_uuid, buff);
+        free(mac);
+        return buff;
+    }
+    else
+        return cpu_uuid();
+}
 
 
 char* gen_uid()
