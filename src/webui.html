@@ -30,7 +30,7 @@
     <p style="display: none;" id="port">$$PORT$$</p>
     <textarea id="messages" readonly></textarea>
     <div id="form">
-        <input type="text" id="message">
+        <input type="text" id="message" onkeydown="handleKeyDown(event)">
         <button onclick="sendMessage()">Send</button>
     </div>
     <script>
@@ -52,6 +52,11 @@
         }
 
         setInterval(fetchUpdates, 100);
+        function handleKeyDown(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
 
         if (port !== "$$PORT") {
             function sendMessage() {

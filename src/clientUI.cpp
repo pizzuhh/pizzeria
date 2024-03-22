@@ -209,9 +209,9 @@ int main()
     std::getline(std::cin, addr);
     if (addr.empty())
         addr = "127.0.0.1:5524";
-    char ip[16] = {0};
+    char ip[MAX_INPUT+1] = {0};
     int port = 0;
-    if (sscanf(addr.c_str(), "%15[^:]:%d", ip, &port) != 2) 
+    if (sscanf(addr.c_str(), "%255[^:]:%d", ip, &port) != 2) 
     {
         fprintf(stderr, "Invalid input format\n");
         return 1;
@@ -225,7 +225,12 @@ int main()
     sockaddr_in server_addr = {0};
     server_addr.sin_port = htons(port);
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(ip);
+    if (inet_pton(AF_INET, toIPv4(ip), &server_addr.sin_addr.s_addr) <= 0)
+    {
+        perror("inet_pton");
+        abort();
+    }
+    // server_addr.sin_addr.s_addr = inet_addr(ip);
     #ifdef CRYPTO
     // generate public and private key
     
