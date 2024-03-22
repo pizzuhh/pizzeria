@@ -48,5 +48,10 @@ You can use the webui as API to send automated messages too! Here are some endpo
 - ``POST /send`` - send a message
 ## Docker image for the server
 If you want to run the server using docker:
-1. Pull the docker image from [docker-hub](https://hub.docker.com/r/pizzuhh/pizzeria-server)
-2. Run it using `docker run 
+1. Pull the docker image `docker pull pizzuhh/pizzeria-server`
+2. Run it using `docker run -it -p 5524:5524 pizzeria-server`
+3. To stop the server either press CTRL+C or CTRL+D
+- Note
+If you want to use different port change `p 5524:5524` part to `p custom-port:5524` (custom port being the port you wish)
+
+You can send domain names (for example: chat.example.com) to your friends instead an IP
