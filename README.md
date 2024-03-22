@@ -48,6 +48,5 @@ You can use the webui as API to send automated messages too! Here are some endpo
 - ``POST /send`` - send a message
 ## Docker image for the server
 If you want to run the server using docker:
-(the image will be uploaded to docker hub for now build it)
-run `docker build -t pizzeria-server .` and then `docker run -it --rm -p 5524:5524 pizzeria-server`
-Connect to the server on port 5524 or whatever port you choose (do not change the port from the server, only the one from docker!)
+1. Pull the docker image from [docker-hub](https://hub.docker.com/r/pizzuhh/pizzeria-server)
+2. Run it using `docker run 

@@ -193,7 +193,10 @@ void *server_client(void *arg)
     {
 
         printf("\nMessage: ");
+        
         std::getline(std::cin, buff);
+        if (std::cin.eof())
+            cls(0);
         if (buff.substr(0, 2) == "#!")
         {
             parse_command(buff.substr(2));
