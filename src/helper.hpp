@@ -17,7 +17,7 @@
 #include <stdarg.h>
 #include <map>
 #include "genuuid.h"
-
+#include <netdb.h>
 // for the encryption support
 #ifdef CRYPTO
 #include <openssl/rsa.h>
@@ -407,3 +407,30 @@ class server
         }
 };
 
+bool isIp(const char* x)
+{
+    sockaddr_in sa;
+    return inet_pton(AF_INET, x, &sa.sin_addr.s_addr) !=0;
+}
+
+char* toIPv4(const char* hostname)
+{
+    if (!isIp(hostname))
+    {
+        char* ip = new char[INET_ADDRSTRLEN];
+        addrinfo hints = {0}, *result = {0};
+        sockaddr_in *addr = {0};
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        int status = 0;
+        if ((status = getaddrinfo(hostname, NULL, &hints, &result)))
+        {
+            fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+            abort();
+        }
+        addr = (sockaddr_in*)result->ai_addr;
+        inet_ntop(AF_INET, &(addr->sin_addr.s_addr), ip, INET_ADDRSTRLEN);
+        return ip;
+    }
+    return (char*)hostname;
+}

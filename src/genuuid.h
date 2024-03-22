@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <uuid/uuid.h>
+#include <string.h>
+#include <dirent.h>
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <string.h>
-#include <dirent.h>
+
 
 static std::string getCPUModelName() 
 {
@@ -56,7 +57,7 @@ char* getMAC()
             }
         }
     }
-    return "00:00:00:00:00:00";
+    return (char*)"00:00:00:00:00:00";
 }
 char* cpu_uuid()
 {
