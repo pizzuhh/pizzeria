@@ -15,7 +15,7 @@ struct client
     int fd;
     // int id;
     char id[1024];
-    char uid[1024];
+    char uid[MAX_INPUT];
     sockaddr addr;
     bool valid = true;
 #ifdef CRYPTO
@@ -288,11 +288,11 @@ void *handle_client(void *arg)
     recv(cl->fd, id_buff, 1024, 0);
     memcpy(cl->id, id_buff, 1024);
 
-    char uid_buff[1024];
-    recv(cl->fd, uid_buff, 1024, 0);
-    memcpy(cl->uid, uid_buff, 1024);
+    char username_buffer[MAX_INPUT];
+    recv(cl->fd, username_buffer, MAX_INPUT, 0);
+    memcpy(cl->uid, username_buffer, MAX_INPUT);
 
-    printf("client %s: has connected with uid of: %s\n", cl->id, cl->id);
+    printf("client %s: has connected with uid of: %s\n", cl->id, cl->uid);
 
 #ifdef CRYPTO
     // send public key

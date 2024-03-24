@@ -39,6 +39,8 @@ After that you need to create 3 threads:
 - webUI for the client (a bit broken but works)
 ## To be fixed
 - Server crashing when exiting from the webUI server
+## 2.5.1
+- Usernames instead of unique uuids
 ## How to use the webUI?
 Firstly build the server, client and the webUI server (ENCRYPTION MUST BE ENABLED). Make sure the webui.html file is in the current working directory (run `pwd` to see it). Connect to the chat server and a random port will be opened (you'll see it on the terminal), now you can connect to the UI.
 ### endpoints

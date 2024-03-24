@@ -18,6 +18,7 @@
 #include <map>
 #include "genuuid.h"
 #include <netdb.h>
+#include <ctype.h>
 // for the encryption support
 #ifdef CRYPTO
 #include <openssl/rsa.h>
@@ -433,4 +434,17 @@ char* toIPv4(const char* hostname)
         return ip;
     }
     return (char*)hostname;
+}
+
+
+bool iswhitespace (const char *str)
+{
+    while (*str)
+    {
+        if (!isspace(*str))
+            return 0;
+        str++;
+    }
+    
+    return 1;
 }

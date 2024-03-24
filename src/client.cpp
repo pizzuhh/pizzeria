@@ -107,11 +107,26 @@ int main()
     
     // send server info
     const char* id    = get_hw_uuid();
-    const char* uid   = gen_uid();
+    //const char* uid   = gen_uid();
+    char *username = new char[MAX_INPUT];
+    while (1)
+    {
+        printf("Enter username: ");
+        fflush(stdout);
+
+        fgets(username, MAX_INPUT, stdin);
+        size_t len = strlen(username);
+        username[len-1] = '\0';
+        if (len == 0 || iswhitespace(username))
+            fprintf(stderr, "Invalid username please try again!\n");
+        else
+            break;
+    }
+
     send(client_socket, id, 1024, 0);
     delete[] id;
     // msleep(10); // if something brakes uncomment this
-    send(client_socket, uid, 1024, 0);
+    send(client_socket, username, MAX_INPUT, 0);
     
     #ifdef CRYPTO
     recv(client_socket, pubkey, 1024, 0);
@@ -120,8 +135,8 @@ int main()
     // printf("%s\n", pubkey);
     s2c_pubkey = LoadPublicKeyFromString(pubkey);
     #endif
-    printf("Welcome to the chat room (%s:%d)\nYour unique ID is: %s\n", ip, port, uid);
-    delete[] uid;
+    printf("Welcome to the chat room (%s:%d)\n", ip, port);
+    delete[] username;
     connected = true;
     pthread_create(&t_recv, 0, rcv, 0);
     pthread_create(&t_send, 0, snd, 0);
@@ -209,6 +224,11 @@ void *snd(void *arg)
         if (std::cin.eof())
             term();
         std::getline(std::cin, msg);
+        if (msg[0] == 0x00 && msg.length() == 0)
+        {
+            fprintf(stderr, "Do not send empty messages!\n");
+            continue;
+        }
         #ifdef CRYPTO
         strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
         strncpy(p->type, "MSG", 4);
