@@ -47,7 +47,7 @@ struct client
     int fd;
     // int id;
     char id[1024];
-    char uid[MAX_INPUT];
+    char username[MAX_INPUT];
     sockaddr addr;
     bool valid = true;
 #ifdef CRYPTO
@@ -315,7 +315,7 @@ void send_message(char *msg, char *sender)
     char* s = p.serialize();
     for (const auto &client : clients)
     {
-        if (strcmp(client->uid, sender))
+        if (strcmp(client->username, sender))
         {
 #ifdef CRYPTO
             unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
@@ -402,10 +402,10 @@ void *handle_client(void *arg)
     char username_buffer[MAX_INPUT];
     recv(cl->fd, username_buffer, MAX_INPUT, 0);
     WRITELOG(INFO, "Received client ID");
-    memcpy(cl->uid, username_buffer, MAX_INPUT);
+    memcpy(cl->username, username_buffer, MAX_INPUT);
 
-    printf("client %s: has connected with uid of: %s\n", cl->id, cl->uid);
-    WRITELOG(INFO, formatString("client %s: has connected with uid of: %s", cl->id, cl->uid));
+    printf("client %s: has connected with username of: %s\n", cl->id, cl->username);
+    WRITELOG(INFO, formatString("client %s: has connected with username of: %s", cl->id, cl->username));
 
 #ifdef CRYPTO
     // send public key
@@ -435,16 +435,16 @@ void *handle_client(void *arg)
         if (!strncmp(p.type, "CLS", 3))
         {
             cl->valid = false;
-            printf("%s: has disconnected\n", cl->uid);
-            fsend_message("%s: has disconnected", cl->uid);
-            WRITELOG(INFO, formatString("%s: has disconnected", cl->uid));
+            printf("%s: has disconnected\n", cl->username);
+            fsend_message("%s: has disconnected", cl->username);
+            WRITELOG(INFO, formatString("%s: has disconnected", cl->username));
             break;
         }
         else if(!strncmp(p.type, "MSG", 3))
         {
-            printf("%s: %s\n", cl->uid, p.data);
-            send_message((char *)p.data, cl->uid);
-            WRITELOG(INFO, p.data);
+            printf("%s: %s\n", cl->username, p.data);
+            send_message((char *)p.data, cl->username);
+            WRITELOG(INFO, formatString("%s: %s", cl->username));
         }
         else if(!strncmp(p.type, "HRT", 3))
         {
@@ -456,18 +456,19 @@ void *handle_client(void *arg)
         }
         
 #else
-        /*         printf("%s: %s\n", cl->uid, msg);*/
+        /*         printf("%s: %s\n", cl->username, msg);*/
         if (!strncmp(p.type, "MSG", 3))
         {
-            printf("%s: %s\n", cl->uid, p.data);
-            send_message(p.data, cl->uid);
-            WRITELOG(INFO, p.data);
+            printf("%s: %s\n", cl->username, p.data);
+            send_message(p.data, cl->username);
+            WRITELOG(INFO, formatString("%s: %s", cl->username));
+
         }
         else if (!strncmp(p.type, "CLS", 3))
         {
             cl->valid = false;
-            fsend_message("%s: has disconnected", cl->uid);
-            WRITELOG(INFO, formatString("%s: has disconnected", cl->uid));
+            fsend_message("%s: has disconnected", cl->username);
+            WRITELOG(INFO, formatString("%s: has disconnected", cl->username));
             break;
         }
 #endif
