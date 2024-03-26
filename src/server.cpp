@@ -103,7 +103,8 @@ void cls(int c)
     {
         delete cl;
     }
-    WRITELOG(ERROR, formatString("Server exited: %d", c));
+    WRITELOG(WARNING, "Server exited");
+    delete logger;
     printf("exited...\nyou can now press enter");
     exit(0);
 }
