@@ -226,11 +226,8 @@ const char* genHTML(const char* path, std::map<const char*, const char*> map)
     return res;
 }
 
-/* 1024 * x */
 #define KiB(x) (x * 1024)
-/* 1024 * 1024 * x */
 #define MiB(x) (KiB(x) * 1024)
-/* 1024 * 1024 * 1024 * x */
 #define GiB(x) (MiB(x) * 1024)
 
 // for web clients (like browser)
@@ -447,4 +444,28 @@ bool iswhitespace (const char *str)
     }
     
     return 1;
+}
+
+
+char* formatString(const char *format, ...)
+{
+    // Initialize a buffer to hold the formatted string
+    const int bufferSize = 1024; // Adjust the size as needed
+    char buffer[bufferSize];
+
+    // Format the string using variable arguments
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, bufferSize, format, args);
+    va_end(args);
+
+    // Dynamically allocate memory for the formatted string
+    char* formattedString = (char*)malloc(strlen(buffer) + 1);
+    if (formattedString != nullptr)
+    {
+        strcpy(formattedString, buffer);
+    }
+
+    // Return the formatted string
+    return formattedString;
 }
