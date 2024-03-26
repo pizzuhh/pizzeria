@@ -1,6 +1,7 @@
 # pizzeria
 A basic chat app written in C++ using unix sockets. 
-
+### Note
+The pre-built binaries are outdated most of the time so it's recommended to bult the project yourself. Check [Building](#Building)
 - [Features](#features)
 - [Building](#building)
 - [V2.5 release notes](#v25)
@@ -12,11 +13,13 @@ A basic chat app written in C++ using unix sockets.
  - colors (coming soon)
 
 # Building
-Firstly make sure you have [libuuid](https://linux.die.net/man/3/libuuid). Clone the repo `git clone https://github.com/pizzuhh/pizzeria.git` and run `make`. You'll see folder `build` in that folder there will be 2 files: `server` and `client`.
-
-make commands:
-`make` - builds the default binaries
-`make build-no-encrypt` - builds the binaries without encryption enabled
+## Dependencies
+- libuuid
+## Building
+Run the following commands to build the project. If there are any issues make an issue!
+1. `$ git clone https://github.com/pizzuhh/pizzeria`
+2. `make`
+3. The binaries are in `./build`
 
 # Windows support?
 Windows is currently not supported. It'll take some time to port the code to windows and to make sure that everything works. If you want to use it on windows, use [WSL(Windows Subsystem for Linux)](https://learn.microsoft.com/en-us/windows/wsl/)
