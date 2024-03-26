@@ -444,7 +444,7 @@ void *handle_client(void *arg)
         {
             printf("%s: %s\n", cl->username, p.data);
             send_message((char *)p.data, cl->username);
-            WRITELOG(INFO, formatString("%s: %s", cl->username));
+            WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
         }
         else if(!strncmp(p.type, "HRT", 3))
         {
@@ -461,7 +461,8 @@ void *handle_client(void *arg)
         {
             printf("%s: %s\n", cl->username, p.data);
             send_message(p.data, cl->username);
-            WRITELOG(INFO, formatString("%s: %s", cl->username));
+            WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
+
 
         }
         else if (!strncmp(p.type, "CLS", 3))

@@ -6,4 +6,4 @@ ADD https://api.github.com/repos/pizzuhh/pizzeria/git/refs/heads/main version.js
 RUN git pull
 RUN make
 EXPOSE 5524
-CMD ["./build/server", "--default-port"]
+CMD ["./build/server", "--default-port", "--log"]
