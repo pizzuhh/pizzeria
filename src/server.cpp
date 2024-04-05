@@ -308,10 +308,10 @@ void *server_client(void *arg)
 }
 void send_message(char *msg, char *sender)
 {
-    char *out = new char[1024];
-    snprintf(out, 1024, "%s: %s", sender, msg);
+    char *out = new char[KiB(4)];
+    sprintf(out, "<%s>: %s", sender, msg);
     packet p;
-    strncpy(p.data, "MSG", 4);
+    strncpy(p.type, "MSG", 4);
     strncpy(p.data, out, MAX_LEN);
     char* s = p.serialize();
     for (const auto &client : clients)
@@ -334,10 +334,10 @@ void send_message(char *msg, char *sender)
 }
 void send_message(const char *msg)
 {
-    char *out = new char[1024];
+    char *out = new char[KiB(4)];
     sprintf(out, "%s: %s", "[SERVER]", msg);
     packet p;
-    strncpy(p.data, "MSG", 4);
+    strncpy(p.type, "MSG", 4);
     strncpy(p.data, out, MAX_LEN);
     char* s = p.serialize();
     for (const auto &client : clients)
@@ -347,7 +347,7 @@ void send_message(const char *msg)
         send(client->fd, encrypted, MAX_LEN, 0);
         WRITELOG(INFO, "Message sent");
 #else
-        send(client->fd, s, strlen(out), 0);
+        send(client->fd, s, MAX_LEN, 0);
         WRITELOG(INFO, "Message sent");
 
 #endif
@@ -443,9 +443,10 @@ void *handle_client(void *arg)
         }
         else if(!strncmp(p.type, "MSG", 3))
         {
-            printf("%s: %s\n", cl->username, p.data);
+            printf("<%s>: %s\n", cl->username, p.data);
             send_message((char *)p.data, cl->username);
             WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
+
         }
         else if(!strncmp(p.type, "HRT", 3))
         {
@@ -457,10 +458,11 @@ void *handle_client(void *arg)
         }
         
 #else
+        p.deserialize((const char*)data);
         /*         printf("%s: %s\n", cl->username, msg);*/
         if (!strncmp(p.type, "MSG", 3))
         {
-            printf("%s: %s\n", cl->username, p.data);
+            printf("<%s>: %s\n", cl->username, p.data);
             send_message(p.data, cl->username);
             WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
 

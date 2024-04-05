@@ -15,8 +15,8 @@ build:
 
 build-no-encrypt:
 	mkdir -p $(BUILD)
-	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client
-	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server
+	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client -g
+	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server -g
 
 debug:
 	mkdir -p $(BUILD)

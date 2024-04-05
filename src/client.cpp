@@ -199,10 +199,16 @@ void *rcv(void *arg)
             #ifdef CRYPTO
             u_char* decrypted = Decrypt((const u_char*)buff, privkey);
             p->deserialize((const char*)decrypted);
-            printf("%s\n", p->data);
+            if (!strncmp(p->type, "MSG", 4))
+            {
+                printf("%s: %s\n", p->data, p->type);
+            }
             #else
             p->deserialize((const char*)buff);
-            printf("%s\n", p->data);
+            if (!strncmp(p->type, "MSG", 4))
+            {
+                printf("%s\n", p->data);
+            }
             #endif
         }
         memset(buff, 0, MAX_LEN);
@@ -240,10 +246,11 @@ void *snd(void *arg)
             term(true);
         }
         #else
-        strncpy(p->type, "MSG", sizeof(p->type));
-        strncpy(p->data, msg.c_str(), MAX_INPUT);
+        strncpy(p->type, "MSG", 4);
+        strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
+        char *buffer_noenc = p->serialize();
         //if (send(client_socket, msg.c_str(), MAX_LEN, 0) == -1)
-        if (send(client_socket, p, MAX_LEN, 0) == -1)
+        if (send(client_socket, buffer_noenc, MAX_LEN, 0) == -1)
         {
             perror("send");
             term(true);
