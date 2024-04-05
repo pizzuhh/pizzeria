@@ -29,14 +29,14 @@ Windows is currently not supported. It'll take some time to port the code to win
 For now the original client is supported. In order to create a client you must:
 - Generate RSA key pairs, 2048bit with RSA_PKCS1_PADDING
 - Generate unique UUID for the device (mustn't change)
-- Generate unique UUID for the session (should be diferent everytime, or not)
+- Generate unique UUID for the session (should be different every-time, or not)
 - Receive the public key from the server (if you want to support encryption)
 - Send the public key to the server (if you want to support encryption)
 ### ALL OF THESE MUST BE MANE IN THIS ORDER
 After that you need to create 3 threads:
 1. receiver (receive messages from the server)
 2. sender (send messages to the server)
-3. hearbeat (every second sned `HRT` packet to the server)
+3. heartbeat (every second send `HRT` packet to the server)
 
 # V2.5
 ## Added
@@ -46,9 +46,9 @@ After that you need to create 3 threads:
 ## 2.5.1
 - Usernames instead of unique uuids
 ## How to use the webUI?
-Firstly build the server, client and the webUI server (ENCRYPTION MUST BE ENABLED). Make sure the webui.html file is in the current working directory (run `pwd` to see it). Connect to the chat server and a random port will be opened (you'll see it on the terminal), now you can connect to the UI.
+Firstly build the server, client and the webUI server (ENCRYPTION MUST BE ENABLED). Make sure the webUI.html file is in the current working directory (run `pwd` to see it). Connect to the chat server and a random port will be opened (you'll see it on the terminal), now you can connect to the UI.
 ### endpoints
-You can use the webui as API to send automated messages too! Here are some endpoints:
+You can use the webUI as API to send automated messages too! Here are some endpoints:
 - ``GET /`` - the UI
 - ``GET /get`` - to get the messages (a bit broken). If no message is received, empty response will be returned
 - ``POST /send`` - send a message
