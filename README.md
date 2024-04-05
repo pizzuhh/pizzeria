@@ -38,13 +38,17 @@ After that you need to create 3 threads:
 2. sender (send messages to the server)
 3. heartbeat (every second send `HRT` packet to the server)
 
-# V2.5
-## Added
-- webUI for the client (a bit broken but works)
-## To be fixed
-- Server crashing when exiting from the webUI server
-## 2.5.1
-- Usernames instead of unique uuids
+# 3.0
+## Changes
+- Private messages `#!pm <target> <message>`<br>
+`<target>` -> username of the person you want to send private message
+`<message>` -> The private message (note: everything after the first space is considered message)
+- Usernames won't be able to have spaces (they'll be replaced by `-`)
+- Servers now can disconnect clients (`#!kick` command may come in in 3.1)
+- Colored messages (Linux only) may come in v3.1/3.2
+- Plans on adding windows support (could happen in v4.0)
+- GUI (planned for the summer. Maybe v5.0+)
+
 ## How to use the webUI?
 Firstly build the server, client and the webUI server (ENCRYPTION MUST BE ENABLED). Make sure the webUI.html file is in the current working directory (run `pwd` to see it). Connect to the chat server and a random port will be opened (you'll see it on the terminal), now you can connect to the UI.
 ### endpoints
