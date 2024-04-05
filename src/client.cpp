@@ -217,6 +217,13 @@ void *rcv(void *arg)
     return nullptr;
 }
 
+/*
+TODOs: 
+1) send_message function
+- move snd() to send_message()
+- make snd() input handler for messages and commands
+*/
+
 void *snd(void *arg)
 {
     #ifdef CRYPTO
