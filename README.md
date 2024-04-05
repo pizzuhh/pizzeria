@@ -49,7 +49,7 @@ After that you need to create 3 threads:
 - Plans on adding windows support (could happen in v4.0)
 - GUI (planned for the summer. Maybe v5.0+)
 
-## How to use the webUI?
+# How to use the webUI?
 Firstly build the server, client and the webUI server (ENCRYPTION MUST BE ENABLED). Make sure the webUI.html file is in the current working directory (run `pwd` to see it). Connect to the chat server and a random port will be opened (you'll see it on the terminal), now you can connect to the UI.
 ### endpoints
 You can use the webUI as API to send automated messages too! Here are some endpoints:
