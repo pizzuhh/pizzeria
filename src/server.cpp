@@ -387,13 +387,62 @@ void fsend_message(const char *format, ...)
     delete[] out;  
     delete[] tmp;
 }
+void send_message(const char *msg, const client *target)
+{
+    char *out = new char[KiB(4)];
+    sprintf(out, "%s: %s", "[SERVER]", msg);
+    packet p;
+    strncpy(p.type, "MSG", 4);
+    strncpy(p.data, out, MAX_LEN);
+    char* s = p.serialize();  
+#ifdef CRYPTO
+        unsigned char *encrypted = Encrypt((const unsigned char *)s, target->publicKey);
+        send(target->fd, encrypted, MAX_LEN, 0);
+#else
+        send(target->fd, s, MAX_LEN, 0);
+#endif
+    free(s);
+    delete[] out;
+}
+void send_message(char* msg, char* sender, char* receiver)
+{
+    for (auto &it : clients)
+    {
+        if (!strcmp(receiver, it->username))
+        {
+            char *out = new char[KiB(5)];
+            sprintf(out, "[<%s> -> <%s>]: %s", sender, receiver, msg);
+            packet *p = nullptr;
+            #ifdef CRYPTO
+            p = new packet("MSG", out);
+            char *data = p->serialize();
+            unsigned char *enc = Encrypt((const u_char*)data, it->publicKey);
+            send(it->fd, enc, MAX_LEN, 0);
+            #endif
+            delete[] out;
+            delete p;
+            return;
+        }
+    }
+    auto it = std::find_if(clients.begin(), clients.end(), [&](client *c){
+        return strcmp(c->username, sender) == 0;
+    });
+    client *cl = *it;
+    if (it == clients.end())
+    {
+        send_message("User does not exist", cl);
+        perror("send");
+    }
+}
 
 void *handle_client(void *arg)
 {
     // char msg[MAX_LEN] = {0};
 
     // get client info
+    
     client *cl = (client *)arg;
+    
     char id_buff[1024];
     recv(cl->fd, id_buff, 1024, 0);
     WRITELOG(INFO, "Received client's ID"); // logger goes out of scope. Why?
@@ -421,6 +470,7 @@ void *handle_client(void *arg)
 
 #endif
     clients.push_back(cl);
+    // send_message("test", cl->username, cl->username);
     while (cl->valid)
     {
         packet p;

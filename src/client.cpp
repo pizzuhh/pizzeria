@@ -201,7 +201,7 @@ void *rcv(void *arg)
             p->deserialize((const char*)decrypted);
             if (!strncmp(p->type, "MSG", 4))
             {
-                printf("%s: %s\n", p->data, p->type);
+                printf("%s\n", p->data);
             }
             #else
             p->deserialize((const char*)buff);
