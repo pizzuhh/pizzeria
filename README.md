@@ -15,6 +15,7 @@ The pre-built binaries are outdated most of the time so it's recommended to bult
 # Building
 ## Dependencies
 - libuuid
+- openssl
 ## Building
 Run the following commands to build the project. If there are any issues make an issue!
 1. `$ git clone https://github.com/pizzuhh/pizzeria`
