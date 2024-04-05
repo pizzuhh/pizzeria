@@ -1,7 +1,7 @@
 # pizzeria
 A basic chat app written in C++ using unix sockets. 
 ### Note
-The pre-built binaries are outdated most of the time so it's recommended to bult the project yourself. Check [Building](#Building)
+The pre-built binaries are outdated most of the time so it's recommended to build the project yourself. Check [Building](#Building)
 - [Features](#features)
 - [Building](#building)
 - [V2.5 release notes](#v25)
