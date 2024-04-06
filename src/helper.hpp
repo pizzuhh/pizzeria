@@ -471,3 +471,16 @@ char* formatString(const char *format, ...)
     // Return the formatted string
     return formattedString;
 }
+/*
+this function returns const char pointer allocated by malloc
+make sure to free it using free()
+*/
+const char* format_string(const char* format, ...) 
+{
+    char *buffer = (char*)malloc(MAX_LEN * sizeof(char));
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    return buffer;
+}

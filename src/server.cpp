@@ -428,10 +428,9 @@ void send_message(char* msg, char* sender, char* receiver)
         return strcmp(c->username, sender) == 0;
     });
     client *cl = *it;
-    if (it == clients.end())
+    if (it != clients.end())
     {
-        send_message("User does not exist", cl);
-        perror("send");
+        send_message("User does not exist!", cl);
     }
 }
 
@@ -496,7 +495,22 @@ void *handle_client(void *arg)
             printf("<%s>: %s\n", cl->username, p.data);
             send_message((char *)p.data, cl->username);
             WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
-
+        }
+        else if (!strncmp(p.type, "PVM", 3))
+        {
+            std::string pm(p.data);
+            char target[256]; // Adjust the size as needed
+            char msg[256]; // Adjust the size as needed
+            ssize_t pos = pm.find(' ');
+            if (pos == std::string::npos) {
+                send_message("Error while sending message!", cl); 
+                continue;
+            }
+            strncpy(target, pm.substr(0, pos).c_str(), sizeof(target));
+            target[sizeof(target) - 1] = '\0'; // Ensure null-termination
+            strncpy(msg, pm.substr(pos + 1).c_str(), sizeof(msg));
+            msg[sizeof(msg) - 1] = '\0'; // Ensure null-termination
+            send_message(msg, cl->username, target); // Make sure send_message is properly implemented
         }
 #else
         p.deserialize((const char*)data);
@@ -506,8 +520,6 @@ void *handle_client(void *arg)
             printf("<%s>: %s\n", cl->username, p.data);
             send_message(p.data, cl->username);
             WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
-
-
         }
         else if (!strncmp(p.type, "CLS", 3))
         {

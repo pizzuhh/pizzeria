@@ -67,6 +67,8 @@ int main()
     fprintf(stderr, "CLIENT IS RUNNING WITHOUT ENCRYPTION!\nTo connect with server(s) that use encryption, use client that supports it!\n");
     #endif
     signal(SIGINT, (sighandler_t)term);
+    signal(SIGKILL, (sighandler_t)term);
+    signal(SIGTERM, (sighandler_t)term);
     printf("Enter server ip and port (default is 127.0.0.1:5524): ");
     std::string addr = "";
     std::getline(std::cin, addr);
@@ -121,7 +123,11 @@ int main()
         if (len == 0 || iswhitespace(username))
             fprintf(stderr, "Invalid username please try again!\n");
         else
+        {
+            for (int i = 0; i < strlen(username); i++)
+                if (username[i] == ' ') username[i] = '-';
             break;
+        }
     }
 
     send(client_socket, id, 1024, 0);
@@ -188,22 +194,10 @@ TODOs:
 - make snd() input handler for messages and commands
 */
 
-void *snd(void *arg)
+void send_message(std::string msg)
 {
-    std::string msg;
-    
-    while (running)
-    {
-        packet *p = new packet;
-        if (std::cin.eof())
-            term();
-        std::getline(std::cin, msg);
-        if (msg[0] == 0x00 && msg.length() == 0)
-        {
-            fprintf(stderr, "Do not send empty messages!\n");
-            continue;
-        }
-        #ifdef CRYPTO
+    packet *p = new packet;
+    #ifdef CRYPTO
         strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
         strncpy(p->type, "MSG", 4);
         char* out = p->serialize();
@@ -225,6 +219,57 @@ void *snd(void *arg)
         }
         #endif
         delete p;
+}
+void send_message_private(std::string msg)
+{
+    packet *p = new packet;
+    #ifdef CRYPTO
+        strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
+        strncpy(p->type, "PVM", 4);
+        char* out = p->serialize();
+        u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
+        if (send(client_socket, buffer, sizeof(packet), 0) == -1)
+        {
+            perror("send");
+            term(true);
+        }
+        #else
+        strncpy(p->type, "PVM", 4);
+        strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
+        char *buffer_noenc = p->serialize();
+        //if (send(client_socket, msg.c_str(), MAX_LEN, 0) == -1)
+        if (send(client_socket, buffer_noenc, MAX_LEN, 0) == -1)
+        {
+            perror("send");
+            term(true);
+        }
+        #endif
+        delete p;
+}
+void *snd(void *arg)
+{
+    std::string msg;
+    
+    while (running)
+    {
+        if (std::cin.eof())
+            term();
+        std::getline(std::cin, msg);
+        if (msg.empty())
+        {
+            fprintf(stderr, "Do not send empty messages!\n");
+            continue;
+        }
+        if (msg.substr(0, 2) != "#!") send_message(msg);
+        else
+        {
+            msg.erase(0, 2);
+            if (msg.substr(0, 2) == "pm")
+            {
+                msg.erase(0, 3);
+                send_message_private(msg);
+            }
+        }
     }
     
     return nullptr;
