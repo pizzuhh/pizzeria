@@ -47,7 +47,7 @@ After that you need to create 3 threads:
 `<target>` -> username of the person you want to send private message
 `<message>` -> The private message (note: everything after the first space is considered message)
 - Usernames won't be able to have spaces (they'll be replaced by `-`)
-- Servers now can disconnect clients (`#!kick` command will come in in 3.1)
+- Servers now can disconnect clients / `#!kick` command added (will come in in 3.1)
 - Removed `HRT` since it's not used (for now)
 
 # How to use the webUI?
