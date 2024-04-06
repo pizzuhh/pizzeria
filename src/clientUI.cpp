@@ -18,7 +18,7 @@ pthread_t t_send, t_recv, t_hrt;
 char pubkey[1024];
 u_char *publicKey, *privateKey;
 #ifdef CRYPTO
-RSA* s2c_pubkey;
+RSA* c2s_pubkey;
 #endif
 
 char *currentmsg = nullptr;
@@ -253,7 +253,7 @@ int main()
     // send client's public key so we can encrypt the message later
     send(client_socket, publicKey, 1024, 0);
     // printf("%s\n", pubkey);
-    s2c_pubkey = LoadPublicKeyFromString(pubkey);
+    c2s_pubkey = LoadPublicKeyFromString(pubkey);
     #endif
     
     s.start();

@@ -19,6 +19,8 @@
 #include "genuuid.h"
 #include <netdb.h>
 #include <ctype.h>
+#include <netinet/in.h>
+#include <errno.h>
 // for the encryption support
 #ifdef CRYPTO
 #include <openssl/rsa.h>

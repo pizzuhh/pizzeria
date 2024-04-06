@@ -498,15 +498,6 @@ void *handle_client(void *arg)
             WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
 
         }
-        else if(!strncmp(p.type, "HRT", 3))
-        {
-            const char* cur_time = std::to_string(time(0)).c_str();
-            if (!strcmp(p.data, cur_time))
-            {
-                // printf("Check passed\n");
-            }
-        }
-        
 #else
         p.deserialize((const char*)data);
         /*         printf("%s: %s\n", cl->username, msg);*/

@@ -4,14 +4,15 @@ bool running = true, connected = false;
 /*client socket FD*/
 int client_socket = 0;
 /*Threads*/
-pthread_t t_send, t_recv, t_hrt;
+pthread_t t_send, t_recv;
 /*public key in plaintext*/
 #ifdef CRYPTO
+// server public key
 char pubkey[1024];
 /*The public private key pair*/
 u_char *publicKey, *privateKey;
 
-RSA* s2c_pubkey;
+RSA* c2s_pubkey;
 #endif
 
 void term(bool ab = false, const char* message = "")
@@ -29,7 +30,7 @@ void term(bool ab = false, const char* message = "")
         strncpy(p.data, "DISCONNECTED", MAX_LEN); // set p.data
         char* s = p.serialize(); // turn the packet to string
         #ifdef CRYPTO // for encryption support
-        u_char* enc = Encrypt((const u_char*)s, s2c_pubkey); // encrypt the string
+        u_char* enc = Encrypt((const u_char*)s, c2s_pubkey); // encrypt the string
         send(client_socket, enc, sizeof(packet), 0);
         #else 
         send(client_socket, s, sizeof(packet), 0);
@@ -51,7 +52,7 @@ void* rcv(void* arg);
 /*function to send message to the server*/
 void* snd(void* arg);
 /*heart beat function. Sends a HRT packet to the server to verify if the client is valid.*/
-void* hrt(void* arg);
+void* ping(void* arg);
 
 
 
@@ -129,57 +130,20 @@ int main()
     send(client_socket, username, MAX_INPUT, 0);
     
     #ifdef CRYPTO
+    // receive server's public key
     recv(client_socket, pubkey, 1024, 0);
     // send client's public key so we can encrypt the message later
     send(client_socket, publicKey, 1024, 0);
     // printf("%s\n", pubkey);
-    s2c_pubkey = LoadPublicKeyFromString(pubkey);
+    c2s_pubkey = LoadPublicKeyFromString(pubkey);
     #endif
     printf("Welcome to the chat room (%s:%d)\n", ip, port);
     delete[] username;
     connected = true;
     pthread_create(&t_recv, 0, rcv, 0);
     pthread_create(&t_send, 0, snd, 0);
-    pthread_create(&t_hrt, 0, hrt, 0);
     pthread_join(t_recv, 0);
     pthread_join(t_send, 0);
-    pthread_join(t_hrt, 0);
-}
-
-void *hrt(void*)
-{
-    packet p("HRT");
-    
-    #ifdef CRYPTO
-    RSA* pkey = LoadPublicKeyFromString(pubkey);
-    #endif
-    while (1)
-    {
-        #ifdef CRYPTO
-        int t = time(0);
-        std::string str_time = std::to_string(t);
-        strncpy(p.data, str_time.c_str(), sizeof(p.data));
-        const char* data = p.serialize();
-        const unsigned char* enc = Encrypt((const u_char*)data, pkey);
-        if (send(client_socket, enc, sizeof(packet), 0) == -1)
-        {
-            perror("send");
-            term(true);
-        }
-        #else
-        int t = time(0);
-        std::string str_time = std::to_string(t);
-        strncpy(p.data, str_time.c_str(), sizeof(p.data));
-        const char* data = p.serialize();
-        if (send(client_socket, data, sizeof(packet), 0) == -1)
-        {
-            perror("send");
-            term(true);
-        }
-        #endif
-        sleep(2);
-    }
-    
 }
 
 void *rcv(void *arg)
@@ -226,9 +190,6 @@ TODOs:
 
 void *snd(void *arg)
 {
-    #ifdef CRYPTO
-    RSA* pkey = LoadPublicKeyFromString(pubkey);
-    #endif
     std::string msg;
     
     while (running)
@@ -246,7 +207,7 @@ void *snd(void *arg)
         strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
         strncpy(p->type, "MSG", 4);
         char* out = p->serialize();
-        u_char* buffer = Encrypt((const unsigned char*)out, pkey);
+        u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
         if (send(client_socket, buffer, sizeof(packet), 0) == -1)
         {
             perror("send");

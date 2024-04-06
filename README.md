@@ -7,10 +7,13 @@ The pre-built binaries are outdated most of the time so it's recommended to buil
 - [V2.5 release notes](#v25)
 
 # Features
- - multithreaded
- - encryption
- - switch between TCP and UDP (coming soon)
- - colors (coming soon)
+- multithreaded
+- encryption
+- switch between TCP and UDP (coming soon)
+- colors (coming in v3.1/3.2, only for linux)
+- Plans on adding windows support (could happen in v4.0)
+- GUI (planned for the summer. Maybe v5.0+)
+
 
 # Building
 ## Dependencies
@@ -44,10 +47,8 @@ After that you need to create 3 threads:
 `<target>` -> username of the person you want to send private message
 `<message>` -> The private message (note: everything after the first space is considered message)
 - Usernames won't be able to have spaces (they'll be replaced by `-`)
-- Servers now can disconnect clients (`#!kick` command may come in in 3.1)
-- Colored messages (Linux only) may come in v3.1/3.2
-- Plans on adding windows support (could happen in v4.0)
-- GUI (planned for the summer. Maybe v5.0+)
+- Servers now can disconnect clients (`#!kick` command will come in in 3.1)
+- Removed `HRT` since it's not used (for now)
 
 # How to use the webUI?
 Firstly build the server, client and the webUI server (ENCRYPTION MUST BE ENABLED). Make sure the webUI.html file is in the current working directory (run `pwd` to see it). Connect to the chat server and a random port will be opened (you'll see it on the terminal), now you can connect to the UI.
