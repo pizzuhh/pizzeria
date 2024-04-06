@@ -5,14 +5,15 @@ The pre-built binaries are outdated most of the time so it's recommended to buil
 - [Features](#features)
 - [Building](#building)
 - [V2.5 release notes](#v25)
-
+# WARNING (temporary)
+The webUI client is not up to date with the latest changes (e.g private messages are not supported and usernames too). This will be fixed in the next commit (hopefully) or in 3.1. <h2>The webUI will be deleted when the GUI comes!</h2>
 # Features
 - multithreaded
 - encryption
 - switch between TCP and UDP (coming soon)
 - colors (coming in v3.1/3.2, only for linux)
 - Plans on adding windows support (could happen in v4.0)
-- GUI (planned for the summer. Maybe v5.0+)
+- GUI (planned for the summer. Maybe v4.0+)
 
 
 # Building
