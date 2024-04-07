@@ -414,7 +414,7 @@ void send_message(char* msg, char* sender, char* receiver)
             sprintf(out, "[<%s> -> <%s>]: %s", sender, receiver, msg);
             packet *p = nullptr;
             #ifdef CRYPTO
-            p = new packet("MSG", out);
+            p = new packet("PVM", out);
             char *data = p->serialize();
             unsigned char *enc = Encrypt((const u_char*)data, it->publicKey);
             send(it->fd, enc, MAX_LEN, 0);

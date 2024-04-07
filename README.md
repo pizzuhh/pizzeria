@@ -20,6 +20,7 @@ The webUI client is not up to date with the latest changes (e.g private messages
 ## Dependencies
 - libuuid
 - openssl
+- libnotify
 ## Building
 Run the following commands to build the project. If there are any issues make an issue!
 1. `$ git clone https://github.com/pizzuhh/pizzeria`
@@ -50,6 +51,7 @@ After that you need to create 3 threads:
 - Usernames won't be able to have spaces (they'll be replaced by `-`)
 - Servers now can disconnect clients / `#!kick` command added (will come in in 3.1)
 - Removed `HRT` since it's not used (for now)
+- Notifications when receiving private messages
 
 # How to use the webUI?
 Firstly build the server, client and the webUI server (ENCRYPTION MUST BE ENABLED). Make sure the webUI.html file is in the current working directory (run `pwd` to see it). Connect to the chat server and a random port will be opened (you'll see it on the terminal), now you can connect to the UI.

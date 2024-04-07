@@ -1,4 +1,6 @@
 #include  "helper.hpp"
+#include <libnotify/notify.h>
+
 /*Is client running?*/
 bool running = true, connected = false;
 /*client socket FD*/
@@ -38,6 +40,7 @@ void term(bool ab = false, const char* message = "")
         // detach the threads
         pthread_detach(t_recv); pthread_detach(t_send);
     }
+    notify_uninit();
     // exit
     if (ab)
     {
@@ -63,6 +66,7 @@ void* ping(void* arg);
  */
 int main()
 {
+    notify_init("pizzeria - client");
     #ifndef CRYPTO
     fprintf(stderr, "CLIENT IS RUNNING WITHOUT ENCRYPTION!\nTo connect with server(s) that use encryption, use client that supports it!\n");
     #endif
@@ -172,6 +176,15 @@ void *rcv(void *arg)
             if (!strncmp(p->type, "MSG", 4))
             {
                 printf("%s\n", p->data);
+            }
+            else if (!strncmp(p->type, "PVM", 4))
+            {
+                
+                NotifyNotification *notification = notify_notification_new("Private Message", p->data, NULL);
+                notify_notification_set_timeout(notification, 4000);
+                notify_notification_show(notification, NULL);
+                printf("%s\n", p->data);
+                g_object_unref(G_OBJECT(notification));
             }
             #else
             p->deserialize((const char*)buff);
