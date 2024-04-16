@@ -1,3 +1,5 @@
+# DEV BRANCH
+Dev branch is the latest and unstable! Do not use it! It's just to backup/restore the code.
 # pizzeria
 A basic chat app written in C++ using unix sockets. 
 ### Note
