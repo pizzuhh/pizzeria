@@ -199,14 +199,6 @@ void *rcv(void *arg)
     delete[] buff;
     return nullptr;
 }
-
-/*
-TODOs: 
-1) send_message function
-- move snd() to send_message()
-- make snd() input handler for messages and commands
-*/
-
 void send_message(std::string msg)
 {
     packet *p = new packet;
