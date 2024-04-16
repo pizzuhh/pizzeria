@@ -161,10 +161,10 @@ void *rcv(void *arg)
     #ifdef CRYPTO
     RSA* privkey = LoadPrivateKeyFromString((const char*)privateKey);
     #endif
-    char *buff = new char[MAX_LEN];
+    char *buff = new char[sizeof(packet)];
     while (running)
     {
-        int bytes = recv(client_socket, buff, MAX_LEN, 0);
+        int bytes = recv(client_socket, buff, sizeof(packet), 0);
         if (bytes <= 0)
             continue;
         else
@@ -222,10 +222,10 @@ void send_message(std::string msg)
         }
         #else
         strncpy(p->type, "MSG", 4);
-        strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
+        strncpy(p->data, (char*)msg.c_str(), sizeof(packet));
         char *buffer_noenc = p->serialize();
         //if (send(client_socket, msg.c_str(), MAX_LEN, 0) == -1)
-        if (send(client_socket, buffer_noenc, MAX_LEN, 0) == -1)
+        if (send(client_socket, buffer_noenc, sizeof(packet), 0) == -1)
         {
             perror("send");
             term(true);
@@ -251,7 +251,7 @@ void send_message_private(std::string msg)
         strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
         char *buffer_noenc = p->serialize();
         //if (send(client_socket, msg.c_str(), MAX_LEN, 0) == -1)
-        if (send(client_socket, buffer_noenc, MAX_LEN, 0) == -1)
+        if (send(client_socket, buffer_noenc, sizeof(packet), 0) == -1)
         {
             perror("send");
             term(true);

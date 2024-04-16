@@ -320,7 +320,7 @@ void send_message(char *msg, char *sender)
         {
 #ifdef CRYPTO
             unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
-            send(client->fd, encrypted, MAX_LEN, 0);
+            send(client->fd, encrypted, sizeof(packet), 0);
             WRITELOG(INFO, "Message sent");
 
 #else
@@ -344,10 +344,10 @@ void send_message(const char *msg)
     {   
 #ifdef CRYPTO
         unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
-        send(client->fd, encrypted, MAX_LEN, 0);
+        send(client->fd, encrypted, sizeof(packet), 0);
         WRITELOG(INFO, "Message sent");
 #else
-        send(client->fd, s, MAX_LEN, 0);
+        send(client->fd, s, sizeof(packet), 0);
         WRITELOG(INFO, "Message sent");
 
 #endif
@@ -357,7 +357,7 @@ void send_message(const char *msg)
 }
 void fsend_message(const char *format, ...)
 {
-    char *out = new char[MAX_LEN];
+    char *out = new char[sizeof(packet)];
     char *tmp = new char[MAX_LEN];
 
     va_list args;  // Define a variable argument list
@@ -374,7 +374,7 @@ void fsend_message(const char *format, ...)
     {
 #ifdef CRYPTO
         unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
-        send(client->fd, encrypted, MAX_LEN, 0);
+        send(client->fd, encrypted, sizeof(packet), 0);
         WRITELOG(INFO, "Message sent");
 
 #else
@@ -397,9 +397,9 @@ void send_message(const char *msg, const client *target)
     char* s = p.serialize();  
 #ifdef CRYPTO
         unsigned char *encrypted = Encrypt((const unsigned char *)s, target->publicKey);
-        send(target->fd, encrypted, MAX_LEN, 0);
+        send(target->fd, encrypted, sizeof(packet), 0);
 #else
-        send(target->fd, s, MAX_LEN, 0);
+        send(target->fd, s, sizeof(packet), 0);
 #endif
     free(s);
     delete[] out;
@@ -417,7 +417,7 @@ void send_message(char* msg, char* sender, char* receiver)
             p = new packet("PVM", out);
             char *data = p->serialize();
             unsigned char *enc = Encrypt((const u_char*)data, it->publicKey);
-            send(it->fd, enc, MAX_LEN, 0);
+            send(it->fd, enc, sizeof(packet), 0);
             #endif
             delete[] out;
             delete p;
