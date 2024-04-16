@@ -260,12 +260,10 @@ int main(int argc, char **argv)
     pthread_t adminClient;
     pthread_create(&adminClient, 0, server_client, 0);
     WRITELOG(INFO, "Created server client thread");
-    while (true)
-    {
+    while (true) {
         pthread_t p;
         int cl_fd = accept(fd, (sockaddr *)&cl_addr, (socklen_t *)&socklen);
-        if (cl_fd > 0)
-        {
+        if (cl_fd > 0) {
             WRITELOG(INFO, "Accepted connection");
             last_id++;
             client *cl = new client;
@@ -280,8 +278,7 @@ int main(int argc, char **argv)
     }
 }
 
-void *parse_command(const std::string command)
-{
+void *parse_command(const std::string command) {
     printf("NOT IMPLEMENTED!\n");
     return 0;
 }
@@ -289,16 +286,14 @@ void *parse_command(const std::string command)
 void *server_client(void *arg)
 {
     std::string buff;
-    while (1)
-    {
+    while (1) {
 
         printf("\nMessage: ");
         
         std::getline(std::cin, buff);
         if (std::cin.eof())
             cls(0);
-        if (buff.substr(0, 2) == "#!")
-        {
+        if (buff.substr(0, 2) == "#!") {
             parse_command(buff.substr(2));
         }
         send_message(const_cast<char *>(buff.c_str()));
@@ -314,10 +309,8 @@ void send_message(char *msg, char *sender)
     strncpy(p.type, "MSG", 4);
     strncpy(p.data, out, MAX_LEN);
     char* s = p.serialize();
-    for (const auto &client : clients)
-    {
-        if (strcmp(client->username, sender))
-        {
+    for (const auto &client : clients) {
+        if (strcmp(client->username, sender)) {
 #ifdef CRYPTO
             unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
             send(client->fd, encrypted, sizeof(packet), 0);
@@ -332,16 +325,14 @@ void send_message(char *msg, char *sender)
     free(s);
     delete[] out;
 }
-void send_message(const char *msg)
-{
+void send_message(const char *msg) {
     char *out = new char[KiB(4)];
     sprintf(out, "%s: %s", "[SERVER]", msg);
     packet p;
     strncpy(p.type, "MSG", 4);
     strncpy(p.data, out, MAX_LEN);
     char* s = p.serialize();
-    for (const auto &client : clients)
-    {   
+    for (const auto &client : clients) {   
 #ifdef CRYPTO
         unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
         send(client->fd, encrypted, sizeof(packet), 0);
@@ -355,8 +346,7 @@ void send_message(const char *msg)
     free(s);
     delete[] out;
 }
-void fsend_message(const char *format, ...)
-{
+void fsend_message(const char *format, ...) {
     char *out = new char[sizeof(packet)];
     char *tmp = new char[MAX_LEN];
 
@@ -370,8 +360,7 @@ void fsend_message(const char *format, ...)
     sprintf(out, "[SERVER]: %s", tmp);
     packet p("MSG", out);
     char *s = p.serialize();
-    for (const auto &client : clients)
-    {
+    for (const auto &client : clients) {
 #ifdef CRYPTO
         unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
         send(client->fd, encrypted, sizeof(packet), 0);
@@ -387,8 +376,7 @@ void fsend_message(const char *format, ...)
     delete[] out;  
     delete[] tmp;
 }
-void send_message(const char *msg, const client *target)
-{
+void send_message(const char *msg, const client *target) {
     char *out = new char[KiB(4)];
     sprintf(out, "%s: %s", "[SERVER]", msg);
     packet p;
@@ -404,12 +392,9 @@ void send_message(const char *msg, const client *target)
     free(s);
     delete[] out;
 }
-void send_message(char* msg, char* sender, char* receiver)
-{
-    for (auto &it : clients)
-    {
-        if (!strcmp(receiver, it->username))
-        {
+void send_message(char* msg, char* sender, char* receiver) {
+    for (auto &it : clients) {
+        if (!strcmp(receiver, it->username)) {
             char *out = new char[KiB(5)];
             sprintf(out, "[<%s> -> <%s>]: %s", sender, receiver, msg);
             packet *p = nullptr;
@@ -424,18 +409,15 @@ void send_message(char* msg, char* sender, char* receiver)
             return;
         }
     }
-    auto it = std::find_if(clients.begin(), clients.end(), [&](client *c){
+    auto it = std::find_if(clients.begin(), clients.end(), [&](client *c) {
         return strcmp(c->username, sender) == 0;
     });
     client *cl = *it;
     if (it != clients.end())
-    {
         send_message("User does not exist!", cl);
-    }
 }
 
-void *handle_client(void *arg)
-{
+void *handle_client(void *arg) {
     // char msg[MAX_LEN] = {0};
 
     // get client info
@@ -470,8 +452,7 @@ void *handle_client(void *arg)
 #endif
     clients.push_back(cl);
     // send_message("test", cl->username, cl->username);
-    while (cl->valid)
-    {
+    while (cl->valid) {
         packet p;
         char data[sizeof(packet)] = {0};
         // int bytes = recv(cl->fd, msg, MAX_LEN, 0);
@@ -482,22 +463,17 @@ void *handle_client(void *arg)
 #ifdef CRYPTO
         unsigned char* d = Decrypt((const u_char*)data, s_privkey);
         p.deserialize((const char*)d);
-        if (!strncmp(p.type, "CLS", 3))
-        {
+        if (!strncmp(p.type, "CLS", 3)) {
             cl->valid = false;
             printf("%s: has disconnected\n", cl->username);
             fsend_message("%s: has disconnected", cl->username);
             WRITELOG(INFO, formatString("%s: has disconnected", cl->username));
             break;
-        }
-        else if(!strncmp(p.type, "MSG", 3))
-        {
+        } else if(!strncmp(p.type, "MSG", 3)) {
             printf("<%s>: %s\n", cl->username, p.data);
             send_message((char *)p.data, cl->username);
             WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
-        }
-        else if (!strncmp(p.type, "PVM", 3))
-        {
+        } else if (!strncmp(p.type, "PVM", 3)) {
             std::string pm(p.data);
             char target[256]; // Adjust the size as needed
             char msg[256]; // Adjust the size as needed
@@ -515,14 +491,12 @@ void *handle_client(void *arg)
 #else
         p.deserialize((const char*)data);
         /*         printf("%s: %s\n", cl->username, msg);*/
-        if (!strncmp(p.type, "MSG", 3))
-        {
+        if (!strncmp(p.type, "MSG", 3)) {
             printf("<%s>: %s\n", cl->username, p.data);
             send_message(p.data, cl->username);
             WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
         }
-        else if (!strncmp(p.type, "CLS", 3))
-        {
+        else if (!strncmp(p.type, "CLS", 3)) {
             cl->valid = false;
             fsend_message("%s: has disconnected", cl->username);
             WRITELOG(INFO, formatString("%s: has disconnected", cl->username));
@@ -531,8 +505,7 @@ void *handle_client(void *arg)
 #endif
     }
     vector<client *>::iterator it = std::find(clients.begin(), clients.end(), cl);
-    if (it != clients.end())
-    {
+    if (it != clients.end()) {
         clients.erase(it);
         WRITELOG(INFO, "Erased client");
 
@@ -541,8 +514,7 @@ void *handle_client(void *arg)
     return 0;
 }
 
-void segfault_handler(int signo)
-{
+void segfault_handler(int signo) {
     // Print a message indicating the segmentation fault
     send_message((char*)"Server crashed!");
     WRITELOG(ERROR, "Server received segmentation fault!");
