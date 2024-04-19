@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <sstream>
 // for the encryption support
 #ifdef CRYPTO
 #include <openssl/rsa.h>
@@ -112,7 +113,7 @@ struct packet
 {
     char type[4];
     char data[MAX_LEN];
-    packet(const char *type, char *data)
+    packet(const char *type, const char *data)
     {
         strncpy(this->type, type, 3);
         this->type[3] = '\0';
@@ -127,12 +128,14 @@ struct packet
         }
     }
     packet(){}
+    /*packet to string*/
     char* serialize()
     {
         char* buffer = (char*)malloc(sizeof(packet) + sizeof("\xff"));
         sprintf(buffer, "%s\xFF%s", this->type, this->data);
         return buffer;
     }
+    /*string to packet*/
     void deserialize(const char* in)
     {
         // Find the position of the delimiter '\xff'
@@ -483,4 +486,16 @@ const char* format_string(const char* format, ...)
     vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     return buffer;
+}
+
+
+std::vector<std::string> split(const std::string &str, const char del = ' ') 
+{
+    std::vector<std::string> tokens;
+    std::string token;
+    std::stringstream ss(str);
+    while (std::getline(ss, token, del)) {
+        tokens.push_back(token);
+    }
+    return tokens;
 }

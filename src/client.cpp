@@ -48,7 +48,7 @@ void term(bool ab = false, const char* message = "")
         abort();
     }
     else
-        exit(0);
+        std::exit(0);
 }
 /*function to recive message from the server*/
 void* rcv(void* arg);
@@ -180,17 +180,35 @@ void *rcv(void *arg)
             else if (!strncmp(p->type, "PVM", 4))
             {
                 
+                /* A bit broken for now
                 NotifyNotification *notification = notify_notification_new("Private Message", p->data, NULL);
                 notify_notification_set_timeout(notification, 4000);
-                notify_notification_show(notification, NULL);
+                notify_notification_show(notification, NULL); */
                 printf("%s\n", p->data);
-                g_object_unref(G_OBJECT(notification));
+                //g_object_unref(G_OBJECT(notification));
+            } else if (!strncmp(p->type, "KIC", 4)) {
+                std::string reason;
+                if (strlen(p->data) <= 0) {
+                    reason = "UNKNOWN";
+                } else {
+                    reason = p->data;
+                }
+                printf("You have been kicked by the server owner!\nReason: %s", reason.c_str());
+                term();
             }
             #else
             p->deserialize((const char*)buff);
             if (!strncmp(p->type, "MSG", 4))
             {
                 printf("%s\n", p->data);
+            } else if (!strncmp(p->type, "PVM", 4)) {
+                
+                /* A bit broken for now
+                NotifyNotification *notification = notify_notification_new("Private Message", p->data, NULL);
+                notify_notification_set_timeout(notification, 4000);
+                notify_notification_show(notification, NULL); */
+                printf("%s\n", p->data);
+                //g_object_unref(G_OBJECT(notification));
             }
             #endif
         }

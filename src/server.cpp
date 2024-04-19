@@ -71,6 +71,9 @@ void send_message(char *msg, char *sender);
 void send_message(const char *msg);
 void fsend_message(char *fmt, ...);
 
+// send packet
+
+
 // handle broken pipe
 void broken_pipe()
 {
@@ -166,6 +169,8 @@ int main(int argc, char **argv)
     WRITELOG(INFO, "SIGPIPE -> broken_pipe()");
     signal(SIGINT, (sighandler_t)cls);
     WRITELOG(INFO, "SIGINT -> cls()");
+    signal(SIGSEGV, segfault_handler);
+    WRITELOG(INFO, "SIGSEGV -> segfault_handler()");
     int port = 0;
     if (argc >= 2)
     {
@@ -278,10 +283,47 @@ int main(int argc, char **argv)
     }
 }
 
+
+void send_p(packet p, client cl)
+{
+    char* buff = p.serialize();
+    #ifdef CRYPTO
+    u_char *data = Encrypt((const u_char*)buff, cl.publicKey);
+    send(cl.fd, data, sizeof(packet), 0);
+    #else
+    send(cl.fd, buff, sizeof(packet), 0);
+    #endif
+}
+
+
 void *parse_command(const std::string command) {
-    printf("NOT IMPLEMENTED!\n");
+    std::vector args = split(command);
+    if (args[0] == "kick") {
+        packet p("KIC", "UNKOWN");
+        if (args.size() < 2) {
+            fprintf(stderr, "args[1]: empty\n");
+        }
+        if (args.size() >= 3) {
+            std::string d;
+            for (int i = 2; i < args.size(); i++)
+            {
+                
+                d.append(args[i] + ' ');
+                
+            }
+            strncpy(p.data, d.c_str(), 1024);
+        }
+        const char *target = args[1].c_str();
+        for (client *c : clients) {
+            if (!strcmp(c->username, target)) {
+                WRITELOG(INFO, formatString("Kicked %s, reason: %s", target, p.data));
+                send_p(p, *c);
+            }
+        }
+    }
     return 0;
 }
+
 
 void *server_client(void *arg)
 {
@@ -295,12 +337,15 @@ void *server_client(void *arg)
             cls(0);
         if (buff.substr(0, 2) == "#!") {
             parse_command(buff.substr(2));
+        } else {
+            send_message(const_cast<char *>(buff.c_str()));
         }
-        send_message(const_cast<char *>(buff.c_str()));
+        
     }
 
     return nullptr;
 }
+
 void send_message(char *msg, char *sender)
 {
     char *out = new char[KiB(4)];
@@ -518,7 +563,7 @@ void segfault_handler(int signo) {
     // Print a message indicating the segmentation fault
     send_message((char*)"Server crashed!");
     WRITELOG(ERROR, "Server received segmentation fault!");
-    cls(-1);
+    send_message("SERVER HAS CRASHED! PLEASE DISCONNECT!");
     // Continue with the default signal handler for SIGSEGV
     signal(SIGSEGV, SIG_DFL);
     raise(SIGSEGV);
