@@ -51,7 +51,7 @@ class Logger
             std::time_t t = std::time(nullptr);
             struct tm *tm_info = localtime(&t);
             char buffer[20];
-            strftime(buffer, 20, "%Y-%m-%d-%H:%M:%S", tm_info);
+            strftime(buffer, 20, "%Y-%m-%dT%H:%M:%S", tm_info);
             return std::string(buffer);
         }
         // file name
