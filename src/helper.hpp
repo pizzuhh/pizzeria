@@ -16,7 +16,7 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <map>
-#include "genuuid.h"
+#include "genuuid.hpp"
 #include <netdb.h>
 #include <ctype.h>
 #include <netinet/in.h>

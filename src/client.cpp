@@ -10,7 +10,7 @@
  */
 int main()
 {
-    notify_init("pizzeria - client");
+    //notify_init("pizzeria - client");
     #ifndef CRYPTO
     fprintf(stderr, "CLIENT IS RUNNING WITHOUT ENCRYPTION!\nTo connect with server(s) that use encryption, use client that supports it!\n");
     #endif
@@ -57,7 +57,7 @@ int main()
     }
     
     // send server info
-    const char* id    = get_hw_uuid();
+    const char* id    = gen_priv_uuid();
     //const char* uid   = gen_uid();
     char *username = new char[MAX_INPUT];
     while (1)

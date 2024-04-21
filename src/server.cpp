@@ -118,7 +118,7 @@ int main(int argc, char **argv)
         LOGERROR();
         exit(-1);
     }
-    WRITELOG(INFO, "Bound successfully. Listening for connections");
+    WRITELOG(INFO, "Bind successful. Listening for connections");
     int last_id = 0;
     sockaddr cl_addr;
     int socklen = sizeof(cl_addr);

@@ -253,12 +253,12 @@ void send_message(const char *msg, const client *target) {
     strncpy(p.type, "MSG", 4);
     strncpy(p.data, out, MAX_LEN);
     char* s = p.serialize();  
-#ifdef CRYPTO
+    #ifdef CRYPTO
         unsigned char *encrypted = Encrypt((const unsigned char *)s, target->publicKey);
         send(target->fd, encrypted, sizeof(packet), 0);
-#else
+    #else
         send(target->fd, s, sizeof(packet), 0);
-#endif
+    #endif
     free(s);
     delete[] out;
 }
