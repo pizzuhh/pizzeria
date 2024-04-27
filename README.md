@@ -6,9 +6,10 @@ A basic chat app written in C++ using unix sockets.
 The pre-built binaries are outdated most of the time so it's recommended to build the project yourself. Check [Building](#Building)
 - [Features](#features)
 - [Building](#building)
-- [V2.5 release notes](#v25)
-# WARNING (temporary)
-The webUI client is not up to date with the latest changes (e.g private messages are not supported and usernames too). This will be fixed in the next commit (hopefully) or in 3.1. <h2>The webUI will be deleted when the GUI comes!</h2>
+- [V3 release notes](#30)
+
+# Contributing
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for more information
 # Features
 - multithreaded
 - encryption
