@@ -1,14 +1,13 @@
-# DEV BRANCH
-Dev branch is the latest and unstable! Do not use it! It's just to backup/restore the code.
 # pizzeria
 A basic chat app written in C++ using unix sockets. 
 ### Note
 The pre-built binaries are outdated most of the time so it's recommended to build the project yourself. Check [Building](#Building)
 - [Features](#features)
 - [Building](#building)
-- [V2.5 release notes](#v25)
-# WARNING (temporary)
-The webUI client is not up to date with the latest changes (e.g private messages are not supported and usernames too). This will be fixed in the next commit (hopefully) or in 3.1. <h2>The webUI will be deleted when the GUI comes!</h2>
+- [V3 release notes](#30)
+
+# Contributing
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for more information
 # Features
 - multithreaded
 - encryption
@@ -22,7 +21,7 @@ The webUI client is not up to date with the latest changes (e.g private messages
 ## Dependencies
 - libuuid
 - openssl
-- libnotify
+- libnotify (not needed for now)
 ## Building
 Run the following commands to build the project. If there are any issues make an issue!
 1. `$ git clone https://github.com/pizzuhh/pizzeria`
@@ -55,14 +54,7 @@ After that you need to create 3 threads:
 - Removed `HRT` since it's not used (for now)
 - Notifications when receiving private messages
 
-# How to use the webUI?
-Firstly build the server, client and the webUI server (ENCRYPTION MUST BE ENABLED). Make sure the webUI.html file is in the current working directory (run `pwd` to see it). Connect to the chat server and a random port will be opened (you'll see it on the terminal), now you can connect to the UI.
-### endpoints
-You can use the webUI as API to send automated messages too! Here are some endpoints:
-- ``GET /`` - the UI
-- ``GET /get`` - to get the messages (a bit broken). If no message is received, empty response will be returned
-- ``POST /send`` - send a message
-## Docker image for the server
+# Docker image for the server
 If you want to run the server using docker:
 1. Pull the docker image `docker pull pizzuhh/pizzeria-server`
 2. Run it using `docker run -it -p 5524:5524 pizzeria-server`
