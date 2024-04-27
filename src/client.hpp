@@ -47,6 +47,7 @@ void term(bool ab = false, const char* message = "")
     if (ab) abort();
     else std::exit(0);
 }
+
 void *rcv(void *arg)
 {
     #ifdef CRYPTO

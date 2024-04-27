@@ -149,7 +149,6 @@ void *parse_command(const std::string command) {
     return 0;
 }
 
-
 void *server_client(void *arg)
 {
     std::string buff;
@@ -216,6 +215,9 @@ void send_message(const char *msg) {
     free(s);
     delete[] out;
 }
+
+
+
 void fsend_message(const char *format, ...) {
     char *out = new char[sizeof(packet)];
     char *tmp = new char[MAX_LEN];

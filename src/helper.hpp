@@ -164,6 +164,10 @@ struct packet
     }
 };
 
+struct packet_test {
+    uint8_t type;
+    char data[1024];
+};
 
 //
 // CORS headers
