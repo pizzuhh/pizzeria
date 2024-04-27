@@ -23,7 +23,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) for more information
 ## Dependencies
 - libuuid
 - openssl
-- libnotify
+- libnotify (not needed for now)
 ## Building
 Run the following commands to build the project. If there are any issues make an issue!
 1. `$ git clone https://github.com/pizzuhh/pizzeria`
