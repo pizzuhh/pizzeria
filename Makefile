@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-lcurl -luuid -Wno-deprecated-declarations
+CXXFLAGS=-lcurl -luuid -Wno-deprecated-declarations -Wall
 
 BUILD=./build
 
