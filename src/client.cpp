@@ -1,5 +1,5 @@
 #include  "helper.hpp"
-#include <libnotify/notify.h>
+//#include <libnotify/notify.h>
 
 /*Is client running?*/
 bool running = true, connected = false;
@@ -40,7 +40,7 @@ void term(bool ab = false, const char* message = "")
         // detach the threads
         pthread_detach(t_recv); pthread_detach(t_send);
     }
-    notify_uninit();
+    //notify_uninit();
     // exit
     if (ab)
     {
@@ -66,7 +66,7 @@ void* ping(void* arg);
  */
 int main()
 {
-    notify_init("pizzeria - client");
+    //notify_init("pizzeria - client");
     #ifndef CRYPTO
     fprintf(stderr, "CLIENT IS RUNNING WITHOUT ENCRYPTION!\nTo connect with server(s) that use encryption, use client that supports it!\n");
     #endif
