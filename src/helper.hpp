@@ -16,7 +16,7 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <map>
-#include "genuuid.h"
+#include "genuuid.hpp"
 #include <netdb.h>
 #include <ctype.h>
 #include <netinet/in.h>
@@ -164,6 +164,10 @@ struct packet
     }
 };
 
+struct packet_test {
+    uint8_t type;
+    char data[1024];
+};
 
 //
 // CORS headers

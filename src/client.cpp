@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include  "helper.hpp"
 //#include <libnotify/notify.h>
 
@@ -56,6 +57,10 @@ void* rcv(void* arg);
 void* snd(void* arg);
 /*heart beat function. Sends a HRT packet to the server to verify if the client is valid.*/
 void* ping(void* arg);
+=======
+#include "client.hpp"
+
+>>>>>>> origin/dev
 
 
 
@@ -113,7 +118,7 @@ int main()
     }
     
     // send server info
-    const char* id    = get_hw_uuid();
+    const char* id    = gen_priv_uuid();
     //const char* uid   = gen_uid();
     char *username = new char[MAX_INPUT];
     while (1)
@@ -154,146 +159,4 @@ int main()
     pthread_create(&t_send, 0, snd, 0);
     pthread_join(t_recv, 0);
     pthread_join(t_send, 0);
-}
-
-void *rcv(void *arg)
-{
-    #ifdef CRYPTO
-    RSA* privkey = LoadPrivateKeyFromString((const char*)privateKey);
-    #endif
-    char *buff = new char[sizeof(packet)];
-    while (running)
-    {
-        int bytes = recv(client_socket, buff, sizeof(packet), 0);
-        if (bytes <= 0)
-            continue;
-        else
-        {
-            packet *p = new packet;
-            #ifdef CRYPTO
-            u_char* decrypted = Decrypt((const u_char*)buff, privkey);
-            p->deserialize((const char*)decrypted);
-            if (!strncmp(p->type, "MSG", 4))
-            {
-                printf("%s\n", p->data);
-            }
-            else if (!strncmp(p->type, "PVM", 4))
-            {
-                
-                /* A bit broken for now
-                NotifyNotification *notification = notify_notification_new("Private Message", p->data, NULL);
-                notify_notification_set_timeout(notification, 4000);
-                notify_notification_show(notification, NULL); */
-                printf("%s\n", p->data);
-                //g_object_unref(G_OBJECT(notification));
-            } else if (!strncmp(p->type, "KIC", 4)) {
-                std::string reason;
-                if (strlen(p->data) <= 0) {
-                    reason = "UNKNOWN";
-                } else {
-                    reason = p->data;
-                }
-                printf("You have been kicked by the server owner!\nReason: %s", reason.c_str());
-                term();
-            }
-            #else
-            p->deserialize((const char*)buff);
-            if (!strncmp(p->type, "MSG", 4))
-            {
-                printf("%s\n", p->data);
-            } else if (!strncmp(p->type, "PVM", 4)) {
-                
-                /* A bit broken for now
-                NotifyNotification *notification = notify_notification_new("Private Message", p->data, NULL);
-                notify_notification_set_timeout(notification, 4000);
-                notify_notification_show(notification, NULL); */
-                printf("%s\n", p->data);
-                //g_object_unref(G_OBJECT(notification));
-            }
-            #endif
-        }
-        memset(buff, 0, MAX_LEN);
-    }
-    delete[] buff;
-    return nullptr;
-}
-void send_message(std::string msg)
-{
-    packet *p = new packet;
-    #ifdef CRYPTO
-        strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
-        strncpy(p->type, "MSG", 4);
-        char* out = p->serialize();
-        u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
-        if (send(client_socket, buffer, sizeof(packet), 0) == -1)
-        {
-            perror("send");
-            term(true);
-        }
-        #else
-        strncpy(p->type, "MSG", 4);
-        strncpy(p->data, (char*)msg.c_str(), sizeof(packet));
-        char *buffer_noenc = p->serialize();
-        //if (send(client_socket, msg.c_str(), MAX_LEN, 0) == -1)
-        if (send(client_socket, buffer_noenc, sizeof(packet), 0) == -1)
-        {
-            perror("send");
-            term(true);
-        }
-        #endif
-        delete p;
-}
-void send_message_private(std::string msg)
-{
-    packet *p = new packet;
-    #ifdef CRYPTO
-        strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
-        strncpy(p->type, "PVM", 4);
-        char* out = p->serialize();
-        u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
-        if (send(client_socket, buffer, sizeof(packet), 0) == -1)
-        {
-            perror("send");
-            term(true);
-        }
-        #else
-        strncpy(p->type, "PVM", 4);
-        strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
-        char *buffer_noenc = p->serialize();
-        //if (send(client_socket, msg.c_str(), MAX_LEN, 0) == -1)
-        if (send(client_socket, buffer_noenc, sizeof(packet), 0) == -1)
-        {
-            perror("send");
-            term(true);
-        }
-        #endif
-        delete p;
-}
-void *snd(void *arg)
-{
-    std::string msg;
-    
-    while (running)
-    {
-        if (std::cin.eof())
-            term();
-        std::getline(std::cin, msg);
-        if (msg.empty())
-        {
-            fprintf(stderr, "Do not send empty messages!\n");
-            continue;
-        }
-        if (msg.substr(0, 2) != "#!") send_message(msg);
-        else
-        {
-            msg.erase(0, 2);
-            if (msg.substr(0, 2) == "pm")
-            {
-                msg.erase(0, 3);
-                send_message_private(msg);
-            }
-        }
-    }
-    
-    return nullptr;
 }

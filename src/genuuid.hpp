@@ -35,17 +35,16 @@ static std::string getCPUModelName()
 
     return "Not found";
 }
+
+// get network card mac address
 char* getMAC()
 {
     // https://stackoverflow.com/questions/1779715/
     DIR* NICs = opendir("/sys/class/net/");
     struct dirent *dir;
-    while (dir = readdir(NICs))
-    {
-        if (dir->d_type == DT_LNK)
-        {
-            if (!strncmp(dir->d_name, "en", 2))
-            {
+    while ((dir = readdir(NICs))) {
+        if (dir->d_type == DT_LNK) {
+            if (!strncmp(dir->d_name, "en", 2)) {
                 char path[MAX_INPUT+1];
                 char* mac = (char*)malloc(18 * sizeof(char));
                 snprintf(path, sizeof(path), "/sys/class/net/%s/address", dir->d_name);
@@ -70,7 +69,7 @@ char* cpu_uuid()
     return buff;
 }
 
-char* get_hw_uuid()
+char* gen_priv_uuid()
 {
     uuid_t mac_uuid;
     char *mac = getMAC();
@@ -80,7 +79,7 @@ char* get_hw_uuid()
         uuid_generate_md5(mac_uuid, ns, mac, strlen(mac));
         char *buff = new char[1024];
         uuid_unparse(mac_uuid, buff);
-        free(mac);
+        if (mac != nullptr) free(mac);
         return buff;
     }
     else
