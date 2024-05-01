@@ -22,6 +22,8 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) for more information
 - libuuid
 - openssl
 - libnotify (not needed for now)
+- libcurl
+- [JSON for modern C++](https://github.com/nlohmann/json) (it's included in src/ directory so no need to download it)
 ## Building
 Run the following commands to build the project. If there are any issues make an issue!
 1. `$ git clone https://github.com/pizzuhh/pizzeria`
