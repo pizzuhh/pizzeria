@@ -1,3 +1,6 @@
+# DEC branch
+This branch is unstable most of the time. Do not use it!
+
 # pizzeria
 A basic chat app written in C++ using unix sockets. 
 ### Note
