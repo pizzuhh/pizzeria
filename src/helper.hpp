@@ -111,7 +111,7 @@ unsigned char *Encrypt(const unsigned char *msg, RSA *key)
 #endif
 
 
-#define VERSION "3.2"
+#define VERSION "3.1"
 
 size_t writeCallback(void *ptr, size_t size, size_t nmemb, std::string *s) {
     size_t newLength = size * nmemb;
