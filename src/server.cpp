@@ -9,6 +9,9 @@ written by: pizzuhh
 // main function
 int main(int argc, char **argv)
 {
+    if (checkForUpdate()) {
+        printf("New update has been found!\nGo download it from: https://github.com/pizzuhh/pizzeria/releases/latest\n\n");
+    }
     struct option opt[] = {
         {"log", optional_argument, 0, 'l'},
         {"default-port", no_argument, 0, 'd'},

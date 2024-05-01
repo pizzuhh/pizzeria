@@ -22,6 +22,8 @@
 #include <netinet/in.h>
 #include <errno.h>
 #include <sstream>
+#include <curl/curl.h>
+#include "json.hpp"
 // for the encryption support
 #ifdef CRYPTO
 #include <openssl/rsa.h>
@@ -107,6 +109,46 @@ unsigned char *Encrypt(const unsigned char *msg, RSA *key)
     return encrypted;
 }
 #endif
+
+
+#define VERSION "3.2"
+
+size_t writeCallback(void *ptr, size_t size, size_t nmemb, std::string *s) {
+    size_t newLength = size * nmemb;
+    s->append((char*)ptr, newLength);
+    return newLength;
+    
+}
+/*
+* @return 
+* `-1` - check failed
+* `0` - no update
+* `1` - update available
+*/
+int checkForUpdate() {
+    using json = nlohmann::json;
+    CURL* curl = curl_easy_init();
+    CURLcode res;
+    std::string buffer;
+    
+    curl_easy_setopt(curl, CURLOPT_URL, "https://api.github.com/repos/pizzuhh/pizzeria/releases");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+
+    res = curl_easy_perform(curl);
+    if (res != CURLE_OK) return -1;
+    std::string latestVersion;
+    json j = json::parse(buffer);
+    if (j.is_array()) {
+        if (j.empty()) return -1;
+        json el = j[0];
+        latestVersion = el["tag_name"].get<std::string>();
+    }
+    if (latestVersion == VERSION) return 0;
+    return 1;
+}
+
 
 #define MAX_LEN 1024
 struct packet
