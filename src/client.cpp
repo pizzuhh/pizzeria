@@ -8,6 +8,12 @@
  */
 int main()
 {
+    if (checkForUpdate()) {
+        #ifdef DEBUG
+        printf("%d\n", checkForUpdate());
+        #endif
+        printf("New update has been found!\nGo download it from: https://github.com/pizzuhh/pizzeria/releases/latest\n\n");
+    }
     //notify_init("pizzeria - client");
     #ifndef CRYPTO
     fprintf(stderr, "CLIENT IS RUNNING WITHOUT ENCRYPTION!\nTo connect with server(s) that use encryption, use client that supports it!\n");

@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-lcurl -luuid -Wno-deprecated-declarations
+CXXFLAGS=-lcurl -luuid -Wno-deprecated-declarations -Wall
 
 BUILD=./build
 
@@ -19,8 +19,8 @@ build-no-encrypt:
 
 debug:
 	mkdir -p $(BUILD)
-	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client-debug -DCRYPTO -lcrypto -g
-	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server-debug -DCRYPTO -lcrypto -g
+	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client-debug -DCRYPTO -DDEBUG -lcrypto -g
+	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server-debug -DCRYPTO -DDEBUG -lcrypto -g
 
 clean:
 	rm -rf $(BUILD)/*

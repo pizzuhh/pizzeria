@@ -25,6 +25,7 @@
 #include <sstream>
 #include <curl/curl.h>
 #include "json.hpp"
+#include "config.h"
 // for the encryption support
 #ifdef CRYPTO
 #include <openssl/rsa.h>
@@ -112,7 +113,7 @@ unsigned char *Encrypt(const unsigned char *msg, RSA *key)
 #endif
 
 
-#define VERSION "3.1"
+
 
 size_t writeCallback(void *ptr, size_t size, size_t nmemb, std::string *s) {
     size_t newLength = size * nmemb;
@@ -132,7 +133,7 @@ int checkForUpdate() {
     CURLcode res;
     std::string buffer;
     
-    curl_easy_setopt(curl, CURLOPT_URL, "https://api.github.com/repos/pizzuhh/pizzeria/releases");
+    curl_easy_setopt(curl, CURLOPT_URL, RELEASE_URL);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
