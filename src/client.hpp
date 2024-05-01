@@ -1,3 +1,4 @@
+#pragma once
 /*
 This has the implementations of: term, rcv, snd and the other functions
 from the client code to keep it clean

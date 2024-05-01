@@ -1,3 +1,4 @@
+#pragma once
 /*
 This has the implementations of most functions used server.cpp
 from the client code to keep it clean
