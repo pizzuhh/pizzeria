@@ -9,8 +9,12 @@ Also will be used for the GUI app
 #include "helper.hpp"
 #include <getopt.h>
 #include <limits.h>
+#include <regex>
 
-
+std::vector<std::string> filterKeywords;
+std::string words;
+bool filter_on;
+uint8_t filter_mode;
 
 void *handle_client(void *arg);
 void *server_client(void *arg);
@@ -216,9 +220,6 @@ void send_message(const char *msg) {
     free(s);
     delete[] out;
 }
-
-
-
 void fsend_message(const char *format, ...) {
     char *out = new char[sizeof(packet)];
     char *tmp = new char[MAX_LEN];
@@ -290,6 +291,16 @@ void send_message(char* msg, char* sender, char* receiver) {
         send_message("User does not exist!", cl);
 }
 
+bool filterMessage(const std::string &message) {
+    std::string pattern = "(" + words + ")";
+    std::regex reg(pattern);
+    std::smatch matches;
+    if (std::regex_search(message, matches, reg)) {
+        return true;
+    }
+    return false;
+}
+
 void *handle_client(void *arg) {
     // char msg[MAX_LEN] = {0};
 
@@ -343,9 +354,21 @@ void *handle_client(void *arg) {
             WRITELOG(INFO, formatString("%s: has disconnected", cl->username));
             break;
         } else if(!strncmp(p.type, "MSG", 3)) {
-            printf("<%s>: %s\n", cl->username, p.data);
-            send_message((char *)p.data, cl->username);
-            WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
+            
+            if (filter_on) {
+                if (!filterMessage(p.data)) {
+                    printf("<%s>: %s\n", cl->username, p.data);
+                    send_message((char *)p.data, cl->username);
+                    WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
+                } else {
+                    printf("!FILTERED <%s>: %s\n", cl->username, p.data);
+                    WRITELOG(INFO, formatString("(%s: %s) Has been flagged by the filter!", cl->username, p.data));
+                    send_message("Your message has been flagged by the filter!", cl);
+                }
+            } else {
+                send_message((char *)p.data, cl->username);
+                WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
+            }
         } else if (!strncmp(p.type, "PVM", 3)) {
             std::string pm(p.data);
             char target[256]; // Adjust the size as needed

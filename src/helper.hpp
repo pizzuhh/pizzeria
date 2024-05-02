@@ -114,7 +114,7 @@ unsigned char *Encrypt(const unsigned char *msg, RSA *key)
 
 
 
-
+using json = nlohmann::json;
 size_t writeCallback(void *ptr, size_t size, size_t nmemb, std::string *s) {
     size_t newLength = size * nmemb;
     s->append((char*)ptr, newLength);
@@ -128,7 +128,7 @@ size_t writeCallback(void *ptr, size_t size, size_t nmemb, std::string *s) {
 * `1` - update available
 */
 int checkForUpdate() {
-    using json = nlohmann::json;
+    
     CURL* curl = curl_easy_init();
     CURLcode res;
     std::string buffer;

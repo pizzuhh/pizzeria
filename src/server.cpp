@@ -5,16 +5,18 @@ This file contains the code for the server side
 written by: pizzuhh
 */
 #include "server.hpp"
-
 // main function
 int main(int argc, char **argv)
 {
+    #ifndef DISABLE_UPDATE_CHECK
     if (checkForUpdate()) {
         #ifdef DEBUG
         printf("%d\n", checkForUpdate());
         #endif
         printf("New update has been found!\nGo download it from: https://github.com/pizzuhh/pizzeria/releases/latest\n\n");
     }
+    #endif
+
     struct option opt[] = {
         {"log", optional_argument, 0, 'l'},
         {"default-port", no_argument, 0, 'd'},
@@ -50,6 +52,28 @@ int main(int argc, char **argv)
     if (logging) {
         logger = new Logger(logFile);
     }
+    WRITELOG(INFO, "Reading config file.");
+
+    // parse the log file
+    std::fstream cfg(DEFAULT_CFG_FILE_LOCATION);
+    std::string cfg_data((std::istreambuf_iterator<char>(cfg)), std::istreambuf_iterator<char>());
+    cfg.close();
+    json _json = json::parse(cfg_data);
+    filter_on       = _json["filter"]["enabled"];
+    filter_mode            = _json["filter"]["mode"];
+    if (_json["filter"]["filter"].is_array()) {
+        for (const auto &item : _json["filter"]["filter"]) {
+            words.append(item.get<std::string>() + "|");
+        }
+        if (!words.empty()) words.pop_back();
+    }
+    #ifdef DEBUG
+    printf("%d\n%d\n", filter_on, filter_mode);
+    for (std::string &word : filterKeywords) {
+        printf("%s ", word.c_str());
+    }
+    putchar('\n');
+    #endif
     // warn if the server is not running with encryption
     #ifndef CRYPTO
     fprintf(stderr, "SERVER IS RUNNING WITHOUT ENCRYPTION!\nTO USE ENCRYPTION REBUILD THE SERVER AND THE CLIENT!\n");
