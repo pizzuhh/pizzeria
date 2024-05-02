@@ -1,0 +1,9 @@
+{
+    "filter": {
+        "enabled": true,
+        "mode": 0,
+        "filter": [
+            "cat", "meow", "b0lls"
+        ]
+    }
+}

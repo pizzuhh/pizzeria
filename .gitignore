@@ -3,3 +3,4 @@
 /RELEASE/
 /.vscode/
 *.log
+src/server-cfg.json
