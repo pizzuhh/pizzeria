@@ -87,7 +87,7 @@ char* gen_priv_uuid()
         return cpu_uuid();
 }
 
-// test comment
+
 char* gen_uid()
 {
     char* uid = new char[1024];
