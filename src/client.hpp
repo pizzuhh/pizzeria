@@ -31,7 +31,7 @@ void term(bool ab = false, const char* message = "")
     if (connected) {
         running = false; // disable the client
         packet p; // packet
-        strncpy(p.type, "CLS", 3); // set the packet type to "CLS" -> CLOSE
+        strncpy(p.type, "CLS\0", 4); // set the packet type to "CLS" -> CLOSE
         strncpy(p.data, "DISCONNECTED", MAX_LEN); // set p.data
         char* s = p.serialize(); // turn the packet to string
         #ifdef CRYPTO // for encryption support

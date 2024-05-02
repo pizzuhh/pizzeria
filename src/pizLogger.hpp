@@ -37,9 +37,9 @@ enum type
 #define warn(...) fprintf(stderr, "%s[?]%s ", font_color(255, 255, 0), reset);  fprintf(stderr, __VA_ARGS__, "\n")
 #define err(...)  fprintf(stderr, "%s[x]%s ", font_color(255,0 , 0), reset);    fprintf(stderr, __VA_ARGS__, "\n")
 #else 
-#define info(...) fprintf(stderr, "[!] ", __VA_ARGS__, "\n")
-#define warn(...) fprintf(stderr, "[?] ", __VA_ARGS__, "\n")
-#define err(...)  fprintf(stderr, "[x] ", __VA_ARGS__, "\n")
+#define info(...) fprintf(stderr, "[!] %s%c", __VA_ARGS__, '\n')
+#define warn(...) fprintf(stderr, "[?] %s%c", __VA_ARGS__, '\n')
+#define err(...)  fprintf(stderr, "[x] %s%c", __VA_ARGS__, '\n')
 #endif
 
 class Logger
@@ -90,7 +90,7 @@ class Logger
         //type t -> the type of the log (see the enum)
         //bool p -> should it print to the console
         //bool sys -> should it log the msg to the system log
-        template<type t, bool p, bool sys>
+        template<type t, int p, bool sys>
         void writelog(const char *msg)
         {
             #ifndef USE_EMERG
@@ -121,7 +121,7 @@ class Logger
             fflush (file);
             switch (p)
             {
-            case true:
+            case 1:
                 switch (t)
                 {
                     case 0x01:

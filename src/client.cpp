@@ -76,7 +76,7 @@ int main()
             fprintf(stderr, "Invalid username please try again!\n");
         else
         {
-            for (int i = 0; i < strlen(username); i++)
+            for (size_t i = 0; i < strlen(username); i++)
                 if (username[i] == ' ') username[i] = '-';
             break;
         }

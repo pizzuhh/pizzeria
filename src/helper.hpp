@@ -287,7 +287,7 @@ const char* format_string(const char* format, ...)
     char *buffer = (char*)malloc(MAX_LEN * sizeof(char));
     va_list args;
     va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
+    vsnprintf(buffer, MAX_LEN * sizeof(char), format, args);
     va_end(args);
     return buffer;
 }
@@ -303,3 +303,6 @@ std::vector<std::string> split(const std::string &str, const char del = ' ')
     }
     return tokens;
 }
+
+
+#define KiB(x) (x * 1024)

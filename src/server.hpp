@@ -131,7 +131,7 @@ void *parse_command(const std::string command) {
         }
         if (args.size() >= 3) {
             std::string d;
-            for (int i = 2; i < args.size(); i++)
+            for (size_t i = 2; i < args.size(); i++)
             {
                 
                 d.append(args[i] + ' ');
@@ -316,7 +316,7 @@ void *handle_client(void *arg) {
     send(cl->fd, public_key_gen, strlen((const char *)public_key_gen), 0);
     WRITELOG(INFO, "Sent server's public key");
     // receive public key
-    char clientPublicKey[1024];
+    //char clientPublicKey[1024];
     recv(cl->fd, cl->plainTextKey, 1024, 0);
     WRITELOG(INFO, "Received client public key");
     cl->publicKey = LoadPublicKeyFromString((const char *)cl->plainTextKey);
@@ -350,7 +350,7 @@ void *handle_client(void *arg) {
             std::string pm(p.data);
             char target[256]; // Adjust the size as needed
             char msg[256]; // Adjust the size as needed
-            ssize_t pos = pm.find(' ');
+            size_t pos = pm.find(' ');
             if (pos == std::string::npos) {
                 send_message("Error while sending message!", cl); 
                 continue;

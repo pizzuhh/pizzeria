@@ -46,7 +46,8 @@ char* getMAC()
     while ((dir = readdir(NICs))) {
         if (dir->d_type == DT_LNK) {
             if (!strncmp(dir->d_name, "en", 2)) {
-                char path[MAX_INPUT+1];
+                size_t path_size = snprintf(NULL, 0, "/sys/class/net/%s/address", dir->d_name) + 1;
+                char path[path_size];
                 char* mac = (char*)malloc(18 * sizeof(char));
                 snprintf(path, sizeof(path), "/sys/class/net/%s/address", dir->d_name);
                 FILE* f = fopen(path, "r");
