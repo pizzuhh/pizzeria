@@ -67,13 +67,10 @@ int main(int argc, char **argv)
         }
         if (!words.empty()) words.pop_back();
     }
-    #ifdef DEBUG
-    printf("%d\n%d\n", filter_on, filter_mode);
-    for (std::string &word : filterKeywords) {
-        printf("%s ", word.c_str());
-    }
-    putchar('\n');
-    #endif
+    WRITELOG(INFO, formatString("[CONFIG] filter status: %s", filter_on == 1 ? "ON" : "OFF"));
+    WRITELOG(INFO, formatString("[CONFIG] filter mode: %s", filter_mode == DO_NOT_SEND_MESSAGE ? "DO_NOT_SEND_MESSAGE" : 
+                                                            (filter_mode == KICK_USER ? "KICK_USER" : 
+                                                            filter_mode == BAN_USER ? "BAN_USER" : "UNDEFINED")));
     // warn if the server is not running with encryption
     #ifndef CRYPTO
     fprintf(stderr, "SERVER IS RUNNING WITHOUT ENCRYPTION!\nTO USE ENCRYPTION REBUILD THE SERVER AND THE CLIENT!\n");
