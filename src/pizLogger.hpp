@@ -90,7 +90,7 @@ class Logger
         //type t -> the type of the log (see the enum)
         //bool p -> should it print to the console
         //bool sys -> should it log the msg to the system log
-        template<type t, int p, bool sys>
+        template<type t, int p, int sys>
         void writelog(const char *msg)
         {
             #ifndef USE_EMERG
@@ -114,10 +114,8 @@ class Logger
             }
             logMsg += " " + std::string(msg) + '\n';
             if (file == nullptr)
-            {
                 fprintf(stderr, "Invalid file pointer");
-            }
-            fwrite (logMsg.c_str(), 1, logMsg.size(), file); // segfault?
+            else fwrite (logMsg.c_str(), 1, logMsg.size(), file);
             fflush (file);
             switch (p)
             {
@@ -143,7 +141,7 @@ class Logger
             }
             switch (sys)
             {
-                case true:
+                case 1:
                     openlog("Pizzuhh's logger", LOG_PID | LOG_CONS, LOG_USER);
                     switch (t)
                     {
@@ -160,6 +158,7 @@ class Logger
                             syslog(LOG_EMERG, logMsg.c_str());
                             break;
                     }
+                
             }
         }
         /*
