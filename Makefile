@@ -1,6 +1,6 @@
 CXX=g++
-CXXFLAGS=-lcurl -luuid -Wno-deprecated-declarations -Wall
-
+CXXFLAGS= -Wno-deprecated-declarations -Wall
+LDFLAGS=-lcurl -luuid
 BUILD=./build
 
 all: build
@@ -9,18 +9,18 @@ all: build
 
 build:
 	mkdir -p $(BUILD)
-	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client -DCRYPTO -lcrypto -s
-	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server -DCRYPTO -lcrypto -s
+	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client -DCRYPTO $(LDFLAGS) -lcrypto -s
+	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server -DCRYPTO $(LDFLAGS) -lcrypto -s
 
 build-no-encrypt:
 	mkdir -p $(BUILD)
-	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client -g -s
-	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server -g -s
+	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client $(LDFLAGS) -g -s
+	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server $(LDFLAGS) -g -s
 
 debug:
 	mkdir -p $(BUILD)
-	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client-debug -DCRYPTO -DDEBUG -lcrypto -g
-	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server-debug -DCRYPTO -DDEBUG -lcrypto -g
+	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client-debug -DCRYPTO -DDEBUG $(LDFLAGS) -lcrypto -g
+	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server-debug -DCRYPTO -DDEBUG $(LDFLAGS) -lcrypto -g
 
 clean:
 	rm -rf $(BUILD)/*
