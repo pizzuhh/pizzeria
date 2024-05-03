@@ -5,5 +5,11 @@
         "filter": [
             "cat", "meow", "b0lls"
         ]
+    },
+    "banned-uuids": {
+        "uuid": "reason"
+    },
+    "banned-ips": {
+        "ip": "reason"
     }
 }

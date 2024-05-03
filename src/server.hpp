@@ -306,6 +306,10 @@ bool filterMessage(const std::string &message) {
     return false;
 }
 
+void ban (client &cl) {
+    //TODO(5): Implement it lol
+}
+
 void *handle_client(void *arg) {
     // char msg[MAX_LEN] = {0};
 
@@ -383,7 +387,7 @@ void *handle_client(void *arg) {
                         // TODO(5): Implement the ban logic. For now kick the user
                         case BAN_USER: 
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
-                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and kicked) by the filter!", cl->username, p.data));
+                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and banned) by the filter!", cl->username, p.data));
                             send_message("Your message has been flagged by the filter!", cl);
                             p_mod = packet("KIC", "Banned (kicked) by filter");
                             send_p(p_mod, *cl);
