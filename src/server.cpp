@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     cfg.close();
     json _json = json::parse(cfg_data);
     filter_on       = _json["filter"]["enabled"];
-    filter_mode            = _json["filter"]["mode"];
+    filter_mode     = _json["filter"]["mode"];
     if (_json["filter"]["filter"].is_array()) {
         for (const auto &item : _json["filter"]["filter"]) {
             words.append(item.get<std::string>() + "|");

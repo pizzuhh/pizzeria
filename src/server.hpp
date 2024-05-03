@@ -15,6 +15,11 @@ std::vector<std::string> filterKeywords;
 std::string words;
 bool filter_on;
 uint8_t filter_mode;
+enum filter_mode_enum {
+    DO_NOT_SEND_MESSAGE = 0,
+    KICK_USER = 1,
+    BAN_USER = 2
+};
 
 void *handle_client(void *arg);
 void *server_client(void *arg);
@@ -361,9 +366,34 @@ void *handle_client(void *arg) {
                     send_message((char *)p.data, cl->username);
                     WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
                 } else {
-                    printf("!FILTERED <%s>: %s\n", cl->username, p.data);
-                    WRITELOG(INFO, formatString("(%s: %s) Has been flagged by the filter!", cl->username, p.data));
-                    send_message("Your message has been flagged by the filter!", cl);
+                    packet p_mod;
+                    switch (filter_mode) {
+                        case DO_NOT_SEND_MESSAGE:
+                            printf("!FILTERED <%s>: %s\n", cl->username, p.data);
+                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged by the filter!", cl->username, p.data));
+                            send_message("Your message has been flagged by the filter!", cl);
+                            break;
+                        case KICK_USER:
+                            printf("!FILTERED <%s>: %s\n", cl->username, p.data);
+                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and kicked) by the filter!", cl->username, p.data));
+                            send_message("Your message has been flagged by the filter!", cl);
+                            p_mod = packet("KIC", "Kicked by filter");
+                            send_p(p_mod, *cl);
+                            break;
+                        // TODO(5): Implement the ban logic. For now kick the user
+                        case BAN_USER: 
+                            printf("!FILTERED <%s>: %s\n", cl->username, p.data);
+                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and kicked) by the filter!", cl->username, p.data));
+                            send_message("Your message has been flagged by the filter!", cl);
+                            p_mod = packet("KIC", "Banned (kicked) by filter");
+                            send_p(p_mod, *cl);
+                            break;
+                        default:
+                            printf("!FILTERED <%s>: %s\n", cl->username, p.data);
+                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged by the filter!", cl->username, p.data));
+                            send_message("Your message has been flagged by the filter!", cl);
+                            break;
+                    }
                 }
             } else {
                 send_message((char *)p.data, cl->username);
