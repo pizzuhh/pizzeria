@@ -1,13 +1,10 @@
-# DEC branch
-This branch is unstable most of the time. Do not use it!
-
 # pizzeria
 A basic chat app written in C++ using unix sockets. 
 ### Note
 The pre-built binaries are outdated most of the time so it's recommended to build the project yourself. Check [Building](#Building)
 - [Features](#features)
 - [Building](#building)
-- [V3 release notes](#30)
+- [3.3 Change log](#33)
 
 # Contributing
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for more information
@@ -49,7 +46,7 @@ After that you need to create 3 threads:
 2. sender (send messages to the server)
 3. heartbeat (every second send `HRT` packet to the server)
 
-# 3.2
+# 3.3
 ## Changes
 - Added filter.
 - Fixed seg fault (client) when exiting
