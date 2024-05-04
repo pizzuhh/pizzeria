@@ -41,7 +41,7 @@ void term(bool ab = false, const char* message = "")
         send(client_socket, s, sizeof(packet), 0);
         #endif
         // detach the threads
-        pthread_detach(t_recv); pthread_detach(t_send);
+        pthread_cancel(t_recv);pthread_join(t_recv, 0); pthread_cancel(t_send);pthread_join(t_send, 0);
     }
     //notify_uninit();
     // exit
@@ -125,6 +125,7 @@ void send_message(std::string msg)
             perror("send");
             term(true);
         }
+        delete[] buffer_noenc;
         #endif
         delete p;
 }

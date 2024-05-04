@@ -85,13 +85,13 @@ unsigned char* Decrypt(const unsigned char* msg, RSA* key)
     }
     size_t len = RSA_size(key);
     u_char* decrypted = (u_char*)malloc(RSA_size(key));
-    size_t dlen = RSA_private_decrypt(len, msg, decrypted, key, RSA_PKCS1_PADDING);
-    if (dlen == 0)
+    int dlen = RSA_private_decrypt(len, msg, decrypted, key, RSA_PKCS1_PADDING);
+    if (dlen == -1)
     {
         // Handle decryption error
         fprintf(stderr, "Decryption failed!\n");
         free(decrypted);
-        exit(1);
+        return nullptr;
     }
     decrypted[dlen] = '\0';
     return decrypted;
@@ -175,7 +175,7 @@ struct packet
     /*packet to string*/
     char* serialize()
     {
-        char* buffer = (char*)malloc(sizeof(packet) + sizeof("\xff"));
+        char* buffer = new char[sizeof(packet) + sizeof("\xff")];
         sprintf(buffer, "%s\xFF%s", this->type, this->data);
         return buffer;
     }

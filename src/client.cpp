@@ -6,6 +6,11 @@
  * connects to server
  * sends required data
  */
+
+void cls (int sig) {
+    term();
+}
+
 int main()
 {
     #ifndef DISABLE_UPDATE_CHECK
@@ -20,9 +25,9 @@ int main()
     #ifndef CRYPTO
     fprintf(stderr, "CLIENT IS RUNNING WITHOUT ENCRYPTION!\nTo connect with server(s) that use encryption, use client that supports it!\n");
     #endif
-    signal(SIGINT, (sighandler_t)term);
-    signal(SIGKILL, (sighandler_t)term);
-    signal(SIGTERM, (sighandler_t)term);
+    signal(SIGINT, (sighandler_t)cls);
+    signal(SIGKILL, (sighandler_t)cls);
+    signal(SIGTERM, (sighandler_t)cls);
     printf("Enter server ip and port (default is 127.0.0.1:5524): ");
     std::string addr = "";
     std::getline(std::cin, addr);
