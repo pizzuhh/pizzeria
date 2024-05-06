@@ -29,30 +29,25 @@ void fsend_message(char *fmt, ...);
 
 // https://files.pizzuhh.dev/pizLogger.hpp
 #include "pizLogger.hpp"
-#define WRITELOG(type, msg) \
+/* #define WRITELOG(type, msg) \
 do { \
     if (logging) { \
         logger->writelog<type, 0, 0>(msg); \
     } \
-} while(0)
+} while(0) */
 
-#define LOGERROR() \
+#define WRITELOG(type, msg) logging == true ? logger->writelog<type, 0, 0>(msg) : (void)0
+
+/* #define LOGERROR() \
 if (logging) { \
     logger->logError(); \
-}
-#define CLOSELOGGER() \
-do { \
-    if (logging) { \
-        logger->CloseLogger(); \
-    } \
-} while(0)
+} */
 
-#define DELETELOG() \
-do { \
-    if (logging) { \
-        logger->DeleteLog(); \
-    } \
-} while(0)
+#define LOGERROR() logging == true ? logger->logError() : (void)0
+
+#define CLOSELOGGER() logging == true ? logger->CloseLogger() : (void)0
+
+#define DELETELOG() logging == true ? logger->DelteLog() : (void)0
 
 
 bool defaultPort = false, logging = false;
