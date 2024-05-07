@@ -165,7 +165,6 @@ int main(int argc, char **argv)
         int cl_fd = accept(fd, (sockaddr *)&cl_addr, (socklen_t *)&socklen);
         if (cl_fd > 0) {
             WRITELOG(INFO, "Accepted connection");
-            //last_id++;
             client *cl = new client;
             cl->fd = cl_fd;
             cl->addr = cl_addr;
