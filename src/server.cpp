@@ -146,7 +146,7 @@ int main(int argc, char **argv)
         exit(-1);
     }
     WRITELOG(INFO, "Bind successful. Listening for connections");
-    int last_id = 0;
+    //int last_id = 0;
     sockaddr cl_addr;
     int socklen = sizeof(cl_addr);
 
@@ -165,7 +165,7 @@ int main(int argc, char **argv)
         int cl_fd = accept(fd, (sockaddr *)&cl_addr, (socklen_t *)&socklen);
         if (cl_fd > 0) {
             WRITELOG(INFO, "Accepted connection");
-            last_id++;
+            //last_id++;
             client *cl = new client;
             cl->fd = cl_fd;
             cl->addr = cl_addr;

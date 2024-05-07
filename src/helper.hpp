@@ -32,26 +32,40 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
+void print_error_and_abort(void) {
+    char err_msg[256];
+    ERR_error_string_n(ERR_get_error(), err_msg, 256);
+    fprintf(stderr, "%s\n", err_msg);
+    abort();
+}
+
 unsigned char *private_key_gen, *public_key_gen;
 RSA *s_pubkey, *s_privkey;
 void GenerateKeyPair(unsigned char **privateKey, unsigned char **publicKey)
 {
     RSA *rsa = RSA_generate_key(2048, 65537, NULL, NULL);
+    if (!rsa) print_error_and_abort();
     // private key
     BIO *priv_bio = BIO_new(BIO_s_mem());
+    if (!priv_bio) print_error_and_abort();
+    
     PEM_write_bio_RSAPrivateKey(priv_bio, rsa, NULL, NULL, 0, NULL, NULL);
     int privkeyLen = BIO_pending(priv_bio);
+    if (privkeyLen <= 0) print_error_and_abort();
+
     *privateKey = (unsigned char *)calloc(privkeyLen, 1);
     BIO_read(priv_bio, *privateKey, privkeyLen);
 
     // public key
     BIO *pub_bio = BIO_new(BIO_s_mem());
+    if (!pub_bio)print_error_and_abort();
+
     PEM_write_bio_RSAPublicKey(pub_bio, rsa);
     int pubkeyLen = BIO_pending(pub_bio);
+    if (pubkeyLen <= 0) print_error_and_abort();
+
     *publicKey = (unsigned char *)calloc(pubkeyLen, 1);
     BIO_read(pub_bio, *publicKey, pubkeyLen);
-
-    // printf("%s\n\n%s", *privateKey, *publicKey);
 }
 
 RSA *LoadPrivateKeyFromString(const char *privateKeyStr)
@@ -61,6 +75,8 @@ RSA *LoadPrivateKeyFromString(const char *privateKeyStr)
     if (bio != NULL)
     {
         rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
+        if (!rsa) print_error_and_abort();
+
         BIO_free(bio);
     }
     return rsa;
@@ -72,6 +88,7 @@ RSA *LoadPublicKeyFromString(const char *publicKeyStr)
     if (bio != NULL)
     {
         rsa = PEM_read_bio_RSAPublicKey(bio, NULL, NULL, NULL);
+        if (!rsa) print_error_and_abort();
         BIO_free(bio);
     }
     return rsa;
@@ -86,13 +103,8 @@ unsigned char* Decrypt(const unsigned char* msg, RSA* key)
     size_t len = RSA_size(key);
     u_char* decrypted = (u_char*)malloc(RSA_size(key));
     int dlen = RSA_private_decrypt(len, msg, decrypted, key, RSA_PKCS1_PADDING);
-    if (dlen == -1)
-    {
-        // Handle decryption error
-        fprintf(stderr, "Decryption failed!\n");
-        free(decrypted);
-        return nullptr;
-    }
+    if (dlen == -1) print_error_and_abort();
+
     decrypted[dlen] = '\0';
     return decrypted;
 }
@@ -107,7 +119,9 @@ unsigned char *Encrypt(const unsigned char *msg, RSA *key)
         exit(1);
     }
     unsigned char *encrypted = (unsigned char *)malloc(RSA_size(key));
-    RSA_public_encrypt(len, msg, encrypted, key, RSA_PKCS1_PADDING);
+    int status = RSA_public_encrypt(len, msg, encrypted, key, RSA_PKCS1_PADDING);
+    if (status == -1) print_error_and_abort();
+
     return encrypted;
 }
 #endif
@@ -272,7 +286,7 @@ char* formatString(const char *format, ...)
     char* formattedString = (char*)malloc(strlen(buffer) + 1);
     if (formattedString != nullptr)
     {
-        strcpy(formattedString, buffer);
+        strncpy(formattedString, buffer, strlen(buffer) + 1);
     }
 
     // Return the formatted string

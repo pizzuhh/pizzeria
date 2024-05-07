@@ -141,21 +141,22 @@ class Logger
             }
             switch (sys)
             {
+                case 0: // idk?
                 case 1:
                     openlog("Pizzuhh's logger", LOG_PID | LOG_CONS, LOG_USER);
                     switch (t)
                     {
                         case 0x01:
-                            syslog(LOG_INFO, logMsg.c_str());
+                            syslog(LOG_INFO, "%s", logMsg.c_str());
                             break;
                         case 0x02:
-                            syslog(LOG_WARNING, logMsg.c_str());
+                            syslog(LOG_WARNING, "%s", logMsg.c_str());
                             break;
                         case 0x03:
-                            syslog(LOG_ERR, logMsg.c_str());
+                            syslog(LOG_ERR, "%s", logMsg.c_str());
                             break;
                         case 0x04:
-                            syslog(LOG_EMERG, logMsg.c_str());
+                            syslog(LOG_EMERG, "%s", logMsg.c_str());
                             break;
                     }
                 

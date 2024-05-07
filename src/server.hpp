@@ -263,7 +263,7 @@ void send_message(const char *msg, const client *target) {
     #else
         send(target->fd, s, sizeof(packet), 0);
     #endif
-    free(s);
+    delete[] s;
     delete[] out;
 }
 void send_message(char* msg, char* sender, char* receiver) {
