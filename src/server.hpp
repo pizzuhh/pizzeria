@@ -330,8 +330,7 @@ void *handle_client(void *arg) {
     // send public key
     send(cl->fd, public_key_gen, strlen((const char *)public_key_gen), 0);
     WRITELOG(INFO, "Sent server's public key");
-    // receive public key
-    //char clientPublicKey[1024];
+
     recv(cl->fd, cl->plainTextKey, 1024, 0);
     WRITELOG(INFO, "Received client public key");
     cl->publicKey = LoadPublicKeyFromString((const char *)cl->plainTextKey);
