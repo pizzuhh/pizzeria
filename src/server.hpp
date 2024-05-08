@@ -201,7 +201,7 @@ void send_message(char *msg, char *sender)
 #endif
         }
     }
-    free(s);
+    delete[] s;
     delete[] out;
 }
 void send_message(const char *msg) {
@@ -222,7 +222,7 @@ void send_message(const char *msg) {
 
 #endif
     }
-    free(s);
+    delete[] s;
     delete[] out;
 }
 void fsend_message(const char *format, ...) {
@@ -251,7 +251,7 @@ void fsend_message(const char *format, ...) {
 
 #endif
     }
-    free(s);
+    delete[] s;
     delete[] out;  
     delete[] tmp;
 }
@@ -268,7 +268,7 @@ void send_message(const char *msg, const client *target) {
     #else
         send(target->fd, s, sizeof(packet), 0);
     #endif
-    free(s);
+    delete[] s;
     delete[] out;
 }
 void send_message(char* msg, char* sender, char* receiver) {

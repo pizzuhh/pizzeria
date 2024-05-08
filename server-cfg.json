@@ -3,13 +3,13 @@
         "enabled": true,
         "mode": 1,
         "filter": [
-            "cat", "meow", "b0lls"
+            "words1", "word2"
         ]
     },
     "banned-uuids": {
         "uuid": "reason"
     },
     "banned-ips": {
-        "ip": "reason"
+        "hashed-ip": "reason"
     }
 }

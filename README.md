@@ -49,15 +49,18 @@ After that you need to create 3 threads:
 2. sender (send messages to the server)
 3. heartbeat (every second send `HRT` packet to the server)
 
-# 3.0
+# 3.2
 ## Changes
-- Private messages `#!pm <target> <message>`<br>
-`<target>` -> username of the person you want to send private message
-`<message>` -> The private message (note: everything after the first space is considered message)
-- Usernames won't be able to have spaces (they'll be replaced by `-`)
-- Servers now can disconnect clients / `#!kick` command added (will come in in 3.1)
-- Removed `HRT` since it's not used (for now)
-- Notifications when receiving private messages
+- Added filter.
+- Fixed seg fault (client) when exiting
+## The filter
+The filter is configured by `server-cfg.json`.
+
+`enabled` - true - the filter is enabled or false - the filter is disabled
+
+`mode` - 0 - Messages won't be send, 1 - The message won't be send and the user will be kicked, 2 - The message won't be send and the user will be banned (banning is not implemented yet)
+
+`filter` - JSON array of the words you want to filter. <b>DO NOT LEAVE THIS EMPTY IF `enabled` IS SET TO `true`.</b> (please the remove the placeholder words).
 
 # Docker image for the server
 If you want to run the server using docker:
