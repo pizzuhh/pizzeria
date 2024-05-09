@@ -191,8 +191,10 @@ void send_message(char *msg, char *sender)
     for (const auto &client : clients) {
         if (strcmp(client->username, sender)) {
 #ifdef CRYPTO
-            unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
-            send(client->fd, encrypted, sizeof(packet), 0);
+            int size;
+            unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
+            //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+            send(client->fd, encrypted, size, 0);
             WRITELOG(INFO, "Message sent");
 
 #else
@@ -331,30 +333,34 @@ void *handle_client(void *arg) {
     printf("client %s: has connected with username of: %s\n", cl->id, cl->username);
     WRITELOG(INFO, formatString("client %s: has connected with username of: %s", cl->id, cl->username));
 
-#ifdef CRYPTO
-    // send public key
-    send(cl->fd, public_key_gen, strlen((const char *)public_key_gen), 0);
-    WRITELOG(INFO, "Sent server's public key");
+    #ifdef CRYPTO
     // receive public key
     //char clientPublicKey[1024];
     recv(cl->fd, cl->plainTextKey, 1024, 0);
     WRITELOG(INFO, "Received client public key");
     cl->publicKey = LoadPublicKeyFromString((const char *)cl->plainTextKey);
-    // load private key for decryption
-
-#endif
+    
+    //unsigned char* encrypted_aes_key = Encrypt(server_aes_key, sizeof(server_aes_key), cl->publicKey);
+    send(cl->fd, server_aes_key, sizeof(server_aes_key), 0);
+    sleep(1);
+    send(cl->fd, server_aes_iv, sizeof(server_aes_iv), 0);
+    #endif
     clients.push_back(cl);
     // send_message("test", cl->username, cl->username);
+    
     while (cl->valid) {
         packet p;
-        char data[sizeof(packet)] = {0};
+        u_char *data = new u_char[1040];
         // int bytes = recv(cl->fd, msg, MAX_LEN, 0);
-        int bytes = recv(cl->fd, &data, sizeof(packet), 0);
+        int bytes = recv(cl->fd, data, 1040, 0);
         if (bytes <= 0)
             return 0;
         
 #ifdef CRYPTO
-        unsigned char* d = Decrypt((const u_char*)data, s_privkey);
+        //unsigned char* d = Decrypt((const u_char*)data, s_privkey, sizeof(packet));
+        int size;
+        unsigned char* d = aes_decrypt(data, 1040, server_aes_key, server_aes_iv, &size);
+        
         p.deserialize((const char*)d);
         if (!strncmp(p.type, "CLS", 3)) {
             cl->valid = false;
@@ -400,6 +406,7 @@ void *handle_client(void *arg) {
                     }
                 }
             } else {
+                printf("%s\n", p.data);
                 send_message((char *)p.data, cl->username);
                 WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
             }

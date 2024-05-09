@@ -54,15 +54,17 @@ void *rcv(void *arg)
     #ifdef CRYPTO
     RSA* privkey = LoadPrivateKeyFromString((const char*)privateKey);
     #endif
-    char *buff = new char[sizeof(packet)];
+    u_char *buff = new u_char[1040];
     while (running) {
-        int bytes = recv(client_socket, buff, sizeof(packet), 0);
+        int bytes = recv(client_socket, buff, 1040, 0);
         if (bytes <= 0)
             continue;
         else {
             packet *p = new packet;
             #ifdef CRYPTO
-            u_char* decrypted = Decrypt((const u_char*)buff, privkey);
+            int size;
+            u_char* decrypted = aes_decrypt(buff, 1040, client_aes_key, client_aes_iv, &size);
+            //u_char* decrypted = Decrypt((const u_char*)buff, privkey);
             p->deserialize((const char*)decrypted);
             if (!strncmp(p->type, "MSG", 4)) {
                 printf("%s\n", p->data);
@@ -111,8 +113,10 @@ void send_message(std::string msg)
         strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
         strncpy(p->type, "MSG", 4);
         char* out = p->serialize();
-        u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
-        if (send(client_socket, buffer, sizeof(packet), 0) == -1) {
+        //u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey, sizeof(packet));
+        int size;
+        u_char* buffer = aes_encrypt((u_char*)out, sizeof(packet), client_aes_key, client_aes_iv, &size);
+        if (send(client_socket, buffer, size, 0) == -1) {
             perror("send");
             term(true);
         }

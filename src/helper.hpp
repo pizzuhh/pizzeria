@@ -29,6 +29,8 @@
 // for the encryption support
 #ifdef CRYPTO
 #include <openssl/rsa.h>
+#include <openssl/aes.h>
+#include <openssl/rand.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
@@ -110,6 +112,141 @@ unsigned char *Encrypt(const unsigned char *msg, RSA *key)
     RSA_public_encrypt(len, msg, encrypted, key, RSA_PKCS1_PADDING);
     return encrypted;
 }
+
+unsigned char* Decrypt(const unsigned char* msg, size_t len, RSA* key)
+{
+    if (!key)
+    {
+        fprintf(stderr, "Private key is invalid!\n");
+        exit(1);
+    }
+    unsigned char* decrypted = (unsigned char*)malloc(len);
+    if (!decrypted)
+    {
+        fprintf(stderr, "Memory allocation failed for decryption!\n");
+        exit(1);
+    }
+
+    int dlen = RSA_private_decrypt(len, msg, decrypted, key, RSA_PKCS1_PADDING);
+    if (dlen == -1)
+    {
+        char *err = (char *)malloc(130);
+        ERR_load_crypto_strings();
+        ERR_error_string(ERR_get_error(), err);
+        fprintf(stderr, "Decryption Error: %s\n", err);
+        free(err);
+        free(decrypted);
+        return nullptr;
+    }
+    decrypted[dlen] = '\0';  // Properly null-terminate the string
+    return decrypted;
+}
+
+
+unsigned char *Encrypt(const unsigned char *msg, size_t len, RSA *key)
+{
+    if (!key)
+    {
+        fprintf(stderr, "Public key is invalid!\n");
+        exit(1);
+    }
+    unsigned char *encrypted = (unsigned char *)malloc(RSA_size(key));
+    if (!encrypted)
+    {
+        fprintf(stderr, "Memory allocation failed for encryption!\n");
+        exit(1);
+    }
+
+    int result = RSA_public_encrypt(len, msg, encrypted, key, RSA_PKCS1_PADDING);
+    if (result == -1)
+    {
+        char *err = (char *)malloc(130);
+        ERR_load_crypto_strings();
+        ERR_error_string(ERR_get_error(), err);
+        fprintf(stderr, "Encryption Error: %s\n", err);
+        free(err);
+        free(encrypted);
+        return nullptr;
+    }
+    return encrypted;
+}
+
+
+
+void handleErrors(void) {
+    ERR_print_errors_fp(stderr);
+    abort();
+}
+
+int generate_key_iv(unsigned char *key, unsigned char *iv) {
+    if (!RAND_bytes(key, 32) || !RAND_bytes(iv, AES_BLOCK_SIZE)) {
+        fprintf(stderr, "Failed to generate key and IV.\n");
+        return -1;
+    }
+    return 0;
+}
+
+unsigned char *aes_encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, int *ciphertext_len) {
+    EVP_CIPHER_CTX *ctx;
+    int len;
+
+    *ciphertext_len = plaintext_len + AES_BLOCK_SIZE; // allocate space for padding
+    unsigned char *ciphertext = new u_char[*ciphertext_len];
+    if (!ciphertext) handleErrors();
+
+    if (!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+    if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+        handleErrors();
+
+    if (1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+        handleErrors();
+
+    *ciphertext_len = len; // update the length with the bytes written
+
+    if (1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
+        handleErrors();
+
+    *ciphertext_len += len; // add the last block to the total length
+
+    EVP_CIPHER_CTX_free(ctx);
+    return ciphertext;
+}
+
+unsigned char *aes_decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, int *plaintext_len) {
+    EVP_CIPHER_CTX *ctx;
+    int len;
+    unsigned char *plaintext = new u_char[ciphertext_len]; // ciphertext length is maximum possible size of plaintext
+    if (!plaintext) handleErrors();
+
+    if (!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+    if (1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+        handleErrors();
+
+    if (1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
+        handleErrors();
+
+    *plaintext_len = len; // update the length with the bytes written
+
+    if (1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) {
+        handleErrors(); // note: decryption errors can occur if incorrect key/iv is used or if the ciphertext is tampered
+    }
+
+    *plaintext_len += len; // add the last block to the total length
+
+    EVP_CIPHER_CTX_free(ctx);
+    return plaintext;
+}
+/*
+* returns the total size after the data is padded
+*/
+int calc_padding (int init_legnth) {
+    int mod = init_legnth % AES_BLOCK_SIZE;
+    return init_legnth + (AES_BLOCK_SIZE - mod);
+}
+
+u_char server_aes_key[32], server_aes_iv[AES_BLOCK_SIZE], client_aes_key[32], client_aes_iv[AES_BLOCK_SIZE];
 #endif
 
 
