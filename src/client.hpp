@@ -35,8 +35,10 @@ void term(bool ab = false, const char* message = "")
         strncpy(p.data, "DISCONNECTED", MAX_LEN); // set p.data
         char* s = p.serialize(); // turn the packet to string
         #ifdef CRYPTO // for encryption support
-        u_char* enc = Encrypt((const u_char*)s, c2s_pubkey); // encrypt the string
-        send(client_socket, enc, sizeof(packet), 0);
+        // u_char* enc = Encrypt((const u_char*)s, c2s_pubkey); // encrypt the string
+        int size;
+        u_char* enc = aes_encrypt((u_char*)s, sizeof(packet), client_aes_key, client_aes_iv, &size);
+        send(client_socket, enc, size, 0);
         #else 
         send(client_socket, s, sizeof(packet), 0);
         #endif
@@ -52,7 +54,7 @@ void term(bool ab = false, const char* message = "")
 void *rcv(void *arg)
 {
     #ifdef CRYPTO
-    RSA* privkey = LoadPrivateKeyFromString((const char*)privateKey);
+    //RSA* privkey = LoadPrivateKeyFromString((const char*)privateKey);
     #endif
     u_char *buff = new u_char[1040];
     while (running) {
@@ -140,8 +142,10 @@ void send_message_private(std::string msg)
     strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
     strncpy(p->type, "PVM", 4);
     char* out = p->serialize();
-    u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
-    if (send(client_socket, buffer, sizeof(packet), 0) == -1) {
+    //u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
+    int size;
+    u_char* buffer = aes_encrypt((u_char*)out, sizeof(packet), client_aes_key, client_aes_iv, &size);
+    if (send(client_socket, buffer, size, 0) == -1) {
         perror("send");
         term(true);
     }
@@ -154,8 +158,10 @@ void send_message_private(std::string msg)
         perror("send");
         term(true);
     }
+    delete[] buffer_noenc;
     #endif
     delete p;
+    
 }
 void *snd(void *arg)
 {

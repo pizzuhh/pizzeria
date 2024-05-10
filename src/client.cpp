@@ -100,10 +100,10 @@ int main()
     // send client's public key so we can encrypt the message later
     send(client_socket, publicKey, 1024, 0);
     // printf("%s\n", pubkey);
-    RSA* privkey = LoadPrivateKeyFromString((char*)privateKey);
-    u_char *tmp_aes_key = new u_char[sizeof(client_aes_key)];
-    int b1 = recv(client_socket, client_aes_key, sizeof(client_aes_key), 0);
-    int b2 = recv(client_socket, client_aes_iv, sizeof(client_aes_iv), 0);
+    //RSA* privkey = LoadPrivateKeyFromString((char*)privateKey);
+    //u_char *tmp_aes_key = new u_char[sizeof(client_aes_key)];
+    recv(client_socket, client_aes_key, sizeof(client_aes_key), 0);
+    recv(client_socket, client_aes_iv, sizeof(client_aes_iv), 0);
     //u_char *key = Decrypt(tmp_aes_key, sizeof(client_aes_key), privkey);
     //strncpy((char*)client_aes_key, (char*)key, sizeof(client_aes_key));
 

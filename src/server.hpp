@@ -121,13 +121,17 @@ void help(void)
 
 void send_p(packet p, client cl)
 {
-    char* buff = p.serialize();
+    char* s = p.serialize();
     #ifdef CRYPTO
-    u_char *data = Encrypt((const u_char*)buff, cl.publicKey);
-    send(cl.fd, data, sizeof(packet), 0);
+    //u_char *data = Encrypt((const u_char*)buff, cl.publicKey);
+    int size;
+    unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
+    //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+    send(cl.fd, encrypted, size, 0);
     #else
-    send(cl.fd, buff, sizeof(packet), 0);
+    send(cl.fd, s, sizeof(packet), 0);
     #endif
+    delete[] s;
 }
 
 
@@ -190,39 +194,44 @@ void send_message(char *msg, char *sender)
     char* s = p.serialize();
     for (const auto &client : clients) {
         if (strcmp(client->username, sender)) {
-#ifdef CRYPTO
+        #ifdef CRYPTO
             int size;
             unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
             //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
             send(client->fd, encrypted, size, 0);
             WRITELOG(INFO, "Message sent");
 
-#else
+        #else
             send(client->fd, s, strlen(out), 0);
             WRITELOG(INFO, "Message sent");
-#endif
+        #endif
         }
     }
     delete[] s;
     delete[] out;
 }
 void send_message(const char *msg) {
-    char *out = new char[KiB(4)];
+    
+    
+    char *out = new char[snprintf(nullptr, 0, "%s: %s", "[SERVER]", msg)+1];
     sprintf(out, "%s: %s", "[SERVER]", msg);
     packet p;
     strncpy(p.type, "MSG", 4);
     strncpy(p.data, out, MAX_LEN);
     char* s = p.serialize();
     for (const auto &client : clients) {   
-#ifdef CRYPTO
-        unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
-        send(client->fd, encrypted, sizeof(packet), 0);
+    #ifdef CRYPTO
+        // unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+        int size;
+        unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
+        //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+        send(client->fd, encrypted, size, 0);
         WRITELOG(INFO, "Message sent");
-#else
+    #else
         send(client->fd, s, sizeof(packet), 0);
         WRITELOG(INFO, "Message sent");
 
-#endif
+    #endif
     }
     delete[] s;
     delete[] out;
@@ -242,16 +251,19 @@ void fsend_message(const char *format, ...) {
     packet p("MSG", out);
     char *s = p.serialize();
     for (const auto &client : clients) {
-#ifdef CRYPTO
-        unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
-        send(client->fd, encrypted, sizeof(packet), 0);
+    #ifdef CRYPTO
+        /* unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey); */
+        int size;
+        unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
+        //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+        send(client->fd, encrypted, size, 0);
         WRITELOG(INFO, "Message sent");
 
-#else
+    #else
         send(client->fd, s, strlen(s), 0);
         WRITELOG(INFO, "Message sent");
 
-#endif
+    #endif
     }
     delete[] s;
     delete[] out;  
@@ -265,8 +277,11 @@ void send_message(const char *msg, const client *target) {
     strncpy(p.data, out, MAX_LEN);
     char* s = p.serialize();  
     #ifdef CRYPTO
-        unsigned char *encrypted = Encrypt((const unsigned char *)s, target->publicKey);
-        send(target->fd, encrypted, sizeof(packet), 0);
+        //unsigned char *encrypted = Encrypt((const unsigned char *)s, target->publicKey);
+        int size;
+        unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
+        //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+        send(target->fd, encrypted, size, 0);
     #else
         send(target->fd, s, sizeof(packet), 0);
     #endif
@@ -282,8 +297,11 @@ void send_message(char* msg, char* sender, char* receiver) {
             #ifdef CRYPTO
             p = new packet("PVM", out);
             char *data = p->serialize();
-            unsigned char *enc = Encrypt((const u_char*)data, it->publicKey);
-            send(it->fd, enc, sizeof(packet), 0);
+            //unsigned char *enc = Encrypt((const u_char*)data, it->publicKey);
+            int size;
+            unsigned char *encrypted = aes_encrypt((u_char*)data, sizeof(packet), server_aes_key, server_aes_iv, &size);
+            //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+            send(it->fd, encrypted, size, 0);
             #endif
             delete[] out;
             delete p;
@@ -342,7 +360,7 @@ void *handle_client(void *arg) {
     
     //unsigned char* encrypted_aes_key = Encrypt(server_aes_key, sizeof(server_aes_key), cl->publicKey);
     send(cl->fd, server_aes_key, sizeof(server_aes_key), 0);
-    sleep(1);
+    //sleep(1);
     send(cl->fd, server_aes_iv, sizeof(server_aes_iv), 0);
     #endif
     clients.push_back(cl);
@@ -356,7 +374,7 @@ void *handle_client(void *arg) {
         if (bytes <= 0)
             return 0;
         
-#ifdef CRYPTO
+        #ifdef CRYPTO
         //unsigned char* d = Decrypt((const u_char*)data, s_privkey, sizeof(packet));
         int size;
         unsigned char* d = aes_decrypt(data, 1040, server_aes_key, server_aes_iv, &size);
@@ -425,7 +443,7 @@ void *handle_client(void *arg) {
             msg[sizeof(msg) - 1] = '\0'; // Ensure null-termination
             send_message(msg, cl->username, target); // Make sure send_message is properly implemented
         }
-#else
+        #else
         p.deserialize((const char*)data);
         /*         printf("%s: %s\n", cl->username, msg);*/
         if (!strncmp(p.type, "MSG", 3)) {
@@ -439,7 +457,7 @@ void *handle_client(void *arg) {
             WRITELOG(INFO, formatString("%s: has disconnected", cl->username));
             break;
         }
-#endif
+    #endif
     }
     vector<client *>::iterator it = std::find(clients.begin(), clients.end(), cl);
     if (it != clients.end()) {

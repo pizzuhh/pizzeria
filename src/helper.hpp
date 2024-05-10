@@ -409,7 +409,7 @@ char* formatString(const char *format, ...)
     char* formattedString = (char*)malloc(strlen(buffer) + 1);
     if (formattedString != nullptr)
     {
-        strcpy(formattedString, buffer);
+        strncpy(formattedString, buffer, strlen(buffer) + 1);
     }
 
     // Return the formatted string
