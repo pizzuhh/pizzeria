@@ -119,13 +119,13 @@ void help(void)
 }
 
 
-void send_p(packet p, client cl)
+void send_p(packet2 p, client cl)
 {
     char* s = p.serialize();
     #ifdef CRYPTO
     //u_char *data = Encrypt((const u_char*)buff, cl.publicKey);
     int size;
-    unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
+    unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
     //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
     send(cl.fd, encrypted, size, 0);
     #else
@@ -138,7 +138,7 @@ void send_p(packet p, client cl)
 void *parse_command(const std::string command) {
     std::vector args = split(command);
     if (args[0] == "kick") {
-        packet p("KIC", "UNKOWN");
+        packet2 p(packet_type::SERVER_CLIENT_KICK);
         if (args.size() < 2) {
             fprintf(stderr, "args[1]: empty\n");
         }
@@ -186,52 +186,43 @@ void *server_client(void *arg)
 
 void send_message(char *msg, char *sender)
 {
-    char *out = new char[KiB(4)];
+    char *out = new char[PACKET_SIZE];
     sprintf(out, "<%s>: %s", sender, msg);
-    packet p;
-    strncpy(p.type, "MSG", 4);
-    strncpy(p.data, out, MAX_LEN);
+    packet2 p(out, sender, "", packet_type::MESSAGE);
     char* s = p.serialize();
     for (const auto &client : clients) {
         if (strcmp(client->username, sender)) {
-        #ifdef CRYPTO
+            #ifdef CRYPTO
             int size;
-            unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
-            //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+            unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
             send(client->fd, encrypted, size, 0);
             WRITELOG(INFO, "Message sent");
-
-        #else
-            send(client->fd, s, strlen(out), 0);
+            #else
+            send(client->fd, s, PACKET_SIZE, 0);
             WRITELOG(INFO, "Message sent");
-        #endif
+            #endif
         }
     }
     delete[] s;
     delete[] out;
 }
 void send_message(const char *msg) {
-    
-    
     char *out = new char[snprintf(nullptr, 0, "%s: %s", "[SERVER]", msg)+1];
     sprintf(out, "%s: %s", "[SERVER]", msg);
-    packet p;
-    strncpy(p.type, "MSG", 4);
-    strncpy(p.data, out, MAX_LEN);
+    packet2 p(out, "the higher-ups", "", packet_type::MESSAGE);
     char* s = p.serialize();
-    for (const auto &client : clients) {   
     #ifdef CRYPTO
-        // unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
-        int size;
-        unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
-        //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+     int size;
+    unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
+    #endif
+    for (const auto &client : clients) {   
+        #ifdef CRYPTO
         send(client->fd, encrypted, size, 0);
         WRITELOG(INFO, "Message sent");
-    #else
+        #else
         send(client->fd, s, sizeof(packet), 0);
         WRITELOG(INFO, "Message sent");
-
-    #endif
+        #endif
     }
     delete[] s;
     delete[] out;
@@ -240,22 +231,19 @@ void fsend_message(const char *format, ...) {
     char *out = new char[sizeof(packet)];
     char *tmp = new char[MAX_LEN];
 
-    va_list args;  // Define a variable argument list
-    va_start(args, format);  // Initialize the argument list
+    va_list args;
+    va_start(args, format);
 
-    // Use vsnprintf to format the string with variable arguments
     vsnprintf(tmp, MAX_LEN, format, args);
 
-    va_end(args);  // Clean up the argument list
+    va_end(args);
     sprintf(out, "[SERVER]: %s", tmp);
-    packet p("MSG", out);
+    packet2 p(out, "the higher-ups", "", packet_type::MESSAGE);
     char *s = p.serialize();
     for (const auto &client : clients) {
     #ifdef CRYPTO
-        /* unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey); */
         int size;
-        unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
-        //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+        unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
         send(client->fd, encrypted, size, 0);
         WRITELOG(INFO, "Message sent");
 
@@ -272,14 +260,12 @@ void fsend_message(const char *format, ...) {
 void send_message(const char *msg, const client *target) {
     char *out = new char[KiB(4)];
     sprintf(out, "%s: %s", "[SERVER]", msg);
-    packet p;
-    strncpy(p.type, "MSG", 4);
-    strncpy(p.data, out, MAX_LEN);
+    packet2 p(out, "the higher-ups", "", packet_type::MESSAGE);
     char* s = p.serialize();  
     #ifdef CRYPTO
         //unsigned char *encrypted = Encrypt((const unsigned char *)s, target->publicKey);
         int size;
-        unsigned char *encrypted = aes_encrypt((u_char*)s, sizeof(packet), server_aes_key, server_aes_iv, &size);
+        unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
         //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
         send(target->fd, encrypted, size, 0);
     #else
@@ -291,20 +277,15 @@ void send_message(const char *msg, const client *target) {
 void send_message(char* msg, char* sender, char* receiver) {
     for (auto &it : clients) {
         if (!strcmp(receiver, it->username)) {
-            char *out = new char[KiB(5)];
-            sprintf(out, "[<%s> -> <%s>]: %s", sender, receiver, msg);
-            packet *p = nullptr;
+            char *out = new char[PACKET_SIZE];
+            packet2 p(msg, receiver, sender, packet_type::PRIVATE_MESSAGE);
             #ifdef CRYPTO
-            p = new packet("PVM", out);
-            char *data = p->serialize();
-            //unsigned char *enc = Encrypt((const u_char*)data, it->publicKey);
+            char *data = p.serialize();
             int size;
-            unsigned char *encrypted = aes_encrypt((u_char*)data, sizeof(packet), server_aes_key, server_aes_iv, &size);
-            //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+            unsigned char *encrypted = aes_encrypt((u_char*)data, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
             send(it->fd, encrypted, size, 0);
             #endif
             delete[] out;
-            delete p;
             return;
         }
     }
@@ -331,10 +312,6 @@ void ban (client &cl) {
 }
 
 void *handle_client(void *arg) {
-    // char msg[MAX_LEN] = {0};
-
-    // get client info
-    
     client *cl = (client *)arg;
     
     char id_buff[1024];
@@ -355,7 +332,6 @@ void *handle_client(void *arg) {
     // receive public key
     char clientPublicKey[1024];
     recv(cl->fd, clientPublicKey, 1024, 0);
-    printf("%s\n", clientPublicKey);
     WRITELOG(INFO, "Received client public key");
     EVP_PKEY *key = deserializeEVP_PKEY(clientPublicKey);
     
@@ -363,43 +339,32 @@ void *handle_client(void *arg) {
     size_t len;
     
     rsa_encrypt(server_aes_key, sizeof(server_aes_key), key, &encrypted_aes_key, &len);
-    printf("len: %d\n", len);
     send(cl->fd, encrypted_aes_key, 256, 0);
-    //sleep(1);
     send(cl->fd, server_aes_iv, sizeof(server_aes_iv), 0);
     #endif
     clients.push_back(cl);
     // send_message("test", cl->username, cl->username);
     
     while (cl->valid) {
-        packet p;
-        u_char *data = new u_char[1040];
+        packet2 p;
+        u_char *data = new u_char[1552];
         // int bytes = recv(cl->fd, msg, MAX_LEN, 0);
-        int bytes = recv(cl->fd, data, 1040, 0);
+        int bytes = recv(cl->fd, data, 1552, 0);
         if (bytes <= 0)
             return 0;
         
         #ifdef CRYPTO
-        //unsigned char* d = Decrypt((const u_char*)data, s_privkey, sizeof(packet));
         int size;
-        unsigned char* d = aes_decrypt(data, 1040, server_aes_key, server_aes_iv, &size);
-        
-        p.deserialize((const char*)d);
-        if (!strncmp(p.type, "CLS", 3)) {
-            cl->valid = false;
-            printf("%s: has disconnected\n", cl->username);
-            fsend_message("%s: has disconnected", cl->username);
-            WRITELOG(INFO, formatString("%s: has disconnected", cl->username));
-            break;
-        } else if(!strncmp(p.type, "MSG", 3)) {
-            
+        unsigned char* d = aes_decrypt(data, 1552, server_aes_key, server_aes_iv, &size);
+        p = packet2::deserialize((char*)d);
+        if (p.type == packet_type::MESSAGE) {
             if (filter_on) {
                 if (!filterMessage(p.data)) {
                     printf("<%s>: %s\n", cl->username, p.data);
                     send_message((char *)p.data, cl->username);
                     WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
                 } else {
-                    packet p_mod;
+                    packet2 p_mod;
                     switch (filter_mode) {
                         case DO_NOT_SEND_MESSAGE:
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
@@ -410,7 +375,7 @@ void *handle_client(void *arg) {
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
                             WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and kicked) by the filter!", cl->username, p.data));
                             send_message("Your message has been flagged by the filter!", cl);
-                            p_mod = packet("KIC", "Kicked by filter");
+                            p_mod = packet2(packet_type::SERVER_CLIENT_KICK);
                             send_p(p_mod, *cl);
                             break;
                         // TODO(5): Implement the ban logic. For now kick the user
@@ -418,7 +383,7 @@ void *handle_client(void *arg) {
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
                             WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and banned) by the filter!", cl->username, p.data));
                             send_message("Your message has been flagged by the filter!", cl);
-                            p_mod = packet("KIC", "Banned (kicked) by filter");
+                            p_mod = packet2(packet_type::SERVER_CLIENT_KICK);
                             send_p(p_mod, *cl);
                             break;
                         default:
@@ -429,40 +394,30 @@ void *handle_client(void *arg) {
                     }
                 }
             } else {
-                printf("%s\n", p.data);
-                send_message((char *)p.data, cl->username);
-                WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
+                printf("<%s>: %s\n", cl->username, p.data);
+                send_message(p.data, cl->username);
             }
-        } else if (!strncmp(p.type, "PVM", 3)) {
+        }
+        else if (p.type == packet_type::PRIVATE_MESSAGE) {
             std::string pm(p.data);
-            char target[256]; // Adjust the size as needed
-            char msg[256]; // Adjust the size as needed
+            char target[sizeof(p.receiver)]; // Adjust the size as needed
+            char msg[sizeof(p.data)]; // Adjust the size as needed
             size_t pos = pm.find(' ');
             if (pos == std::string::npos) {
                 send_message("Error while sending message!", cl); 
                 continue;
             }
-            strncpy(target, pm.substr(0, pos).c_str(), sizeof(target));
+            strncpy(target, pm.substr(0, pos).c_str(), sizeof(p.receiver));
             target[sizeof(target) - 1] = '\0'; // Ensure null-termination
-            strncpy(msg, pm.substr(pos + 1).c_str(), sizeof(msg));
+            strncpy(msg, pm.substr(pos + 1).c_str(), sizeof(p.data));
             msg[sizeof(msg) - 1] = '\0'; // Ensure null-termination
             send_message(msg, cl->username, target); // Make sure send_message is properly implemented
         }
-        #else
-        p.deserialize((const char*)data);
-        /*         printf("%s: %s\n", cl->username, msg);*/
-        if (!strncmp(p.type, "MSG", 3)) {
-            printf("<%s>: %s\n", cl->username, p.data);
-            send_message(p.data, cl->username);
-            WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
-        }
-        else if (!strncmp(p.type, "CLS", 3)) {
-            cl->valid = false;
-            fsend_message("%s: has disconnected", cl->username);
-            WRITELOG(INFO, formatString("%s: has disconnected", cl->username));
+        else if (p.type == packet_type::CLIENT_CLOSE) {
+            printf("%s has disconnected\n", cl->username);
             break;
         }
-    #endif
+        #endif
     }
     vector<client *>::iterator it = std::find(clients.begin(), clients.end(), cl);
     if (it != clients.end()) {

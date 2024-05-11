@@ -1,6 +1,6 @@
 {
     "filter": {
-        "enabled": true,
+        "enabled": false,
         "mode": 1,
         "filter": [
             "words1", "word2"

@@ -29,15 +29,12 @@ void term(bool ab = false, const char* message = "")
     pthread_detach(t_recv); pthread_detach(t_send);
     exit(0); */
     if (connected) {
-        running = false; // disable the client
-        packet p; // packet
-        strncpy(p.type, "CLS\0", 4); // set the packet type to "CLS" -> CLOSE
-        strncpy(p.data, "DISCONNECTED", MAX_LEN); // set p.data
-        char* s = p.serialize(); // turn the packet to string
-        #ifdef CRYPTO // for encryption support
-        // u_char* enc = Encrypt((const u_char*)s, c2s_pubkey); // encrypt the string
+        running = false;
+        packet2 p(packet_type::CLIENT_CLOSE);
+        char* s = p.serialize();
+        #ifdef CRYPTO
         int size;
-        u_char* enc = aes_encrypt((u_char*)s, sizeof(packet), client_aes_key, client_aes_iv, &size);
+        u_char* enc = aes_encrypt((u_char*)s, PACKET_SIZE, client_aes_key, client_aes_iv, &size);
         send(client_socket, enc, size, 0);
         #else 
         send(client_socket, s, sizeof(packet), 0);
@@ -51,117 +48,55 @@ void term(bool ab = false, const char* message = "")
     else std::exit(0);
 }
 
-void *rcv(void *arg)
-{
-    #ifdef CRYPTO
-    //RSA* privkey = LoadPrivateKeyFromString((const char*)privateKey);
-    #endif
-    u_char *buff = new u_char[1040];
+void *rcv(void *arg) {
+    u_char *buff = new u_char[PADDED_PACKET_SIZE];
     while (running) {
-        int bytes = recv(client_socket, buff, 1040, 0);
-        if (bytes <= 0)
-            continue;
-        else {
-            packet *p = new packet;
-            #ifdef CRYPTO
-            int size;
-            u_char* decrypted = aes_decrypt(buff, 1040, client_aes_key, client_aes_iv, &size);
-            //u_char* decrypted = Decrypt((const u_char*)buff, privkey);
-            p->deserialize((const char*)decrypted);
-            if (!strncmp(p->type, "MSG", 4)) {
-                printf("%s\n", p->data);
-            } else if (!strncmp(p->type, "PVM", 4)) {
-                
-                /* A bit broken for now
-                NotifyNotification *notification = notify_notification_new("Private Message", p->data, NULL);
-                notify_notification_set_timeout(notification, 4000);
-                notify_notification_show(notification, NULL); */
-                printf("%s\n", p->data);
-                //g_object_unref(G_OBJECT(notification));
-            } else if (!strncmp(p->type, "KIC", 4)) {
-                std::string reason;
-                if (strlen(p->data) <= 0) {
-                    reason = "UNKNOWN";
-                } else {
-                    reason = p->data;
-                }
-                printf("You have been kicked by the server owner! Reason: %s", reason.c_str());
-                term();
-            }
-            #else
-            p->deserialize((const char*)buff);
-            if (!strncmp(p->type, "MSG", 4)) {
-                printf("%s\n", p->data);
-            } else if (!strncmp(p->type, "PVM", 4)) {
-                
-                /* A bit broken for now
-                NotifyNotification *notification = notify_notification_new("Private Message", p->data, NULL);
-                notify_notification_set_timeout(notification, 4000);
-                notify_notification_show(notification, NULL); */
-                printf("%s\n", p->data);
-                //g_object_unref(G_OBJECT(notification));
-            }
-            #endif
+        #ifdef CRYPTO
+        size_t bytes = recv(client_socket, buff, PADDED_PACKET_SIZE, 0);
+        if (bytes <= 0) continue;
+        int len;
+        u_char *dec = aes_decrypt(buff, PADDED_PACKET_SIZE, client_aes_key, client_aes_iv, &len); 
+        packet2 p = packet2::deserialize((char*)dec);
+        
+        if (p.type == packet_type::MESSAGE) {
+            printf("%s\n", p.data);
         }
-        memset(buff, 0, MAX_LEN);
+        if (p.type == packet_type::PRIVATE_MESSAGE) {
+            printf("[<%s> -> <%s>]: %s\n", p.sender, p.receiver, p.data);
+        }
+        if (p.type == packet_type::SERVER_CLIENT_KICK) {
+            printf("You have been kicked by server administrator.");
+            term();
+        }
+        #endif
+        memset(buff, 0, PADDED_PACKET_SIZE);
     }
     delete[] buff;
-    return nullptr;
-}
-void send_message(std::string msg)
-{
-    packet *p = new packet;
-    #ifdef CRYPTO
-        strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
-        strncpy(p->type, "MSG", 4);
-        char* out = p->serialize();
-        //u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey, sizeof(packet));
-        int size;
-        u_char* buffer = aes_encrypt((u_char*)out, sizeof(packet), client_aes_key, client_aes_iv, &size);
-        if (send(client_socket, buffer, size, 0) == -1) {
-            perror("send");
-            term(true);
-        }
-        #else
-        strncpy(p->type, "MSG", 4);
-        strncpy(p->data, (char*)msg.c_str(), sizeof(packet));
-        char *buffer_noenc = p->serialize();
-        //if (send(client_socket, msg.c_str(), MAX_LEN, 0) == -1)
-        if (send(client_socket, buffer_noenc, sizeof(packet), 0) == -1) {
-            perror("send");
-            term(true);
-        }
-        delete[] buffer_noenc;
-        #endif
-        delete p;
 }
 void send_message_private(std::string msg)
 {
-    packet *p = new packet;
     #ifdef CRYPTO
-    strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
-    strncpy(p->type, "PVM", 4);
-    char* out = p->serialize();
+    packet2 p(msg.c_str(), "", "", packet_type::PRIVATE_MESSAGE);
+    char* out = p.serialize();
     //u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
     int size;
-    u_char* buffer = aes_encrypt((u_char*)out, sizeof(packet), client_aes_key, client_aes_iv, &size);
+    u_char* buffer = aes_encrypt((u_char*)out, PACKET_SIZE, client_aes_key, client_aes_iv, &size);
     if (send(client_socket, buffer, size, 0) == -1) {
         perror("send");
         term(true);
     }
     #else
-    strncpy(p->type, "PVM", 4);
-    strncpy(p->data, (char*)msg.c_str(), MAX_LEN);
-    char *buffer_noenc = p->serialize();
-    //if (send(client_socket, msg.c_str(), MAX_LEN, 0) == -1)
-    if (send(client_socket, buffer_noenc, sizeof(packet), 0) == -1) {
-        perror("send");
-        term(true);
-    }
-    delete[] buffer_noenc;
     #endif
-    delete p;
     
+}
+void send_message (std::string msg) {
+    packet2 p (msg.c_str(), "", "", packet_type::MESSAGE);
+    char *data = p.serialize();
+    #ifdef CRYPTO
+    int len;
+    u_char *encrypted = aes_encrypt ((u_char*)data, 1537, client_aes_key, client_aes_iv, &len);
+    send(client_socket, encrypted, len, 0);
+    #endif
 }
 void *snd(void *arg)
 {

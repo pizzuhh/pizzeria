@@ -242,9 +242,9 @@ size_t writeCallback(void *ptr, size_t size, size_t nmemb, std::string *s) {
 }
 /*
 * @return 
-* `-1` - check failed
-* `0` - no update
-* `1` - update available
+* `-1`  -     check failed
+* `0`   -     no update
+* `1`   -     update available
 */
 int checkForUpdate() {
     
@@ -327,11 +327,46 @@ struct packet
     }
 };
 
-struct packet_test {
-    uint8_t type;
-    char data[1024];
+enum class packet_type : char {
+        MESSAGE = 0,
+        PRIVATE_MESSAGE = 1,
+        CLIENT_CLOSE = 2,
+        SERVER_CLIENT_KICK = 3,
+        AUTH = 4,
+        GENERIC = 10
 };
+#define PACKET_SIZE 1537
+#define PADDED_PACKET_SIZE 1552
 
+struct packet2 {
+     
+    packet_type type;
+    char sender[MAX_INPUT+1];
+    char receiver[MAX_INPUT+1];
+    char data[MAX_LEN];
+    packet2 (const char *data, const char *sender, const char *receiver, packet_type type) {
+        this->type = type;
+        strncpy(this->data,     data,       sizeof(this->data));
+        strncpy(this->sender,   sender,     sizeof(this->sender));
+        strncpy(this->receiver, receiver,   sizeof(this->receiver));
+    }
+    packet2 (packet_type type) {
+        this->type = type;
+    }
+    packet2 (){}
+    char* serialize() {
+        size_t size = sizeof(this->type) + sizeof(this->receiver) + sizeof(this->sender) + sizeof(this->data);
+        char* ret = new char[size];
+        memcpy(ret, this, size);
+        return ret;
+    }
+    static packet2 deserialize(char* data) {
+        size_t size = sizeof(packet2::type) + sizeof(packet2::receiver) + sizeof(packet2::sender) + sizeof(packet2::data);
+        packet2 packet;
+        memcpy(&packet, data, size);
+        return packet;
+    }
+};
 
 bool isIp(const char* x)
 {
