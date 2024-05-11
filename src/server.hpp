@@ -71,7 +71,7 @@ struct client
     bool valid = true;
 #ifdef CRYPTO
     char plainTextKey[1024];
-    RSA *publicKey;
+    EVP_PKEY *publicKey;
 #endif
 };
 
@@ -353,13 +353,18 @@ void *handle_client(void *arg) {
 
     #ifdef CRYPTO
     // receive public key
-    //char clientPublicKey[1024];
-    recv(cl->fd, cl->plainTextKey, 1024, 0);
+    char clientPublicKey[1024];
+    recv(cl->fd, clientPublicKey, 1024, 0);
+    printf("%s\n", clientPublicKey);
     WRITELOG(INFO, "Received client public key");
-    cl->publicKey = LoadPublicKeyFromString((const char *)cl->plainTextKey);
+    EVP_PKEY *key = deserializeEVP_PKEY(clientPublicKey);
     
-    //unsigned char* encrypted_aes_key = Encrypt(server_aes_key, sizeof(server_aes_key), cl->publicKey);
-    send(cl->fd, server_aes_key, sizeof(server_aes_key), 0);
+    unsigned char* encrypted_aes_key; 
+    size_t len;
+    
+    rsa_encrypt(server_aes_key, sizeof(server_aes_key), key, &encrypted_aes_key, &len);
+    printf("len: %d\n", len);
+    send(cl->fd, encrypted_aes_key, 256, 0);
     //sleep(1);
     send(cl->fd, server_aes_iv, sizeof(server_aes_iv), 0);
     #endif

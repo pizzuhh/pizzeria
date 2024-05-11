@@ -153,8 +153,6 @@ int main(int argc, char **argv)
     #ifdef CRYPTO
     // generate private-public key pair
     generate_key_iv(server_aes_key, server_aes_iv);
-    s_pubkey = LoadPublicKeyFromString((const char*)public_key_gen);
-    s_privkey = LoadPrivateKeyFromString((const char*)private_key_gen);
     WRITELOG(INFO, "[CRYPTO]: Generated key pairs");
     #endif
     pthread_t adminClient;

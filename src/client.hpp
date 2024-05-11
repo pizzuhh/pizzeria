@@ -85,7 +85,7 @@ void *rcv(void *arg)
                 } else {
                     reason = p->data;
                 }
-                printf("You have been kicked by the server owner!\nReason: %s", reason.c_str());
+                printf("You have been kicked by the server owner! Reason: %s", reason.c_str());
                 term();
             }
             #else

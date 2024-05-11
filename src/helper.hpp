@@ -34,149 +34,131 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
-unsigned char *private_key_gen, *public_key_gen;
-RSA *s_pubkey, *s_privkey;
-void GenerateKeyPair(unsigned char **privateKey, unsigned char **publicKey)
-{
-    RSA *rsa = RSA_generate_key(2048, 65537, NULL, NULL);
-    // private key
-    BIO *priv_bio = BIO_new(BIO_s_mem());
-    PEM_write_bio_RSAPrivateKey(priv_bio, rsa, NULL, NULL, 0, NULL, NULL);
-    int privkeyLen = BIO_pending(priv_bio);
-    *privateKey = (unsigned char *)calloc(privkeyLen, 1);
-    BIO_read(priv_bio, *privateKey, privkeyLen);
-
-    // public key
-    BIO *pub_bio = BIO_new(BIO_s_mem());
-    PEM_write_bio_RSAPublicKey(pub_bio, rsa);
-    int pubkeyLen = BIO_pending(pub_bio);
-    *publicKey = (unsigned char *)calloc(pubkeyLen, 1);
-    BIO_read(pub_bio, *publicKey, pubkeyLen);
-
-    // printf("%s\n\n%s", *privateKey, *publicKey);
-}
-
-RSA *LoadPrivateKeyFromString(const char *privateKeyStr)
-{
-    RSA *rsa = NULL;
-    BIO *bio = BIO_new_mem_buf(privateKeyStr, -1);
-    if (bio != NULL)
-    {
-        rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
-        BIO_free(bio);
-    }
-    return rsa;
-}
-RSA *LoadPublicKeyFromString(const char *publicKeyStr)
-{
-    RSA *rsa = NULL;
-    BIO *bio = BIO_new_mem_buf(publicKeyStr, -1);
-    if (bio != NULL)
-    {
-        rsa = PEM_read_bio_RSAPublicKey(bio, NULL, NULL, NULL);
-        BIO_free(bio);
-    }
-    return rsa;
-}
-unsigned char* Decrypt(const unsigned char* msg, RSA* key)
-{
-    if (!key)
-    {
-        fprintf(stderr, "Private key is invalid!\n");
-        exit(1);
-    }
-    size_t len = RSA_size(key);
-    u_char* decrypted = (u_char*)malloc(RSA_size(key));
-    int dlen = RSA_private_decrypt(len, msg, decrypted, key, RSA_PKCS1_PADDING);
-    if (dlen == -1)
-    {
-        // Handle decryption error
-        fprintf(stderr, "Decryption failed!\n");
-        free(decrypted);
-        return nullptr;
-    }
-    decrypted[dlen] = '\0';
-    return decrypted;
-}
-
-
-unsigned char *Encrypt(const unsigned char *msg, RSA *key)
-{
-    size_t len = strlen((const char *)msg);
-    if (!key)
-    {
-        fprintf(stderr, "Public key is invalid!\n");
-        exit(1);
-    }
-    unsigned char *encrypted = (unsigned char *)malloc(RSA_size(key));
-    RSA_public_encrypt(len, msg, encrypted, key, RSA_PKCS1_PADDING);
-    return encrypted;
-}
-
-unsigned char* Decrypt(const unsigned char* msg, size_t len, RSA* key)
-{
-    if (!key)
-    {
-        fprintf(stderr, "Private key is invalid!\n");
-        exit(1);
-    }
-    unsigned char* decrypted = (unsigned char*)malloc(len);
-    if (!decrypted)
-    {
-        fprintf(stderr, "Memory allocation failed for decryption!\n");
-        exit(1);
-    }
-
-    int dlen = RSA_private_decrypt(len, msg, decrypted, key, RSA_PKCS1_PADDING);
-    if (dlen == -1)
-    {
-        char *err = (char *)malloc(130);
-        ERR_load_crypto_strings();
-        ERR_error_string(ERR_get_error(), err);
-        fprintf(stderr, "Decryption Error: %s\n", err);
-        free(err);
-        free(decrypted);
-        return nullptr;
-    }
-    decrypted[dlen] = '\0';  // Properly null-terminate the string
-    return decrypted;
-}
-
-
-unsigned char *Encrypt(const unsigned char *msg, size_t len, RSA *key)
-{
-    if (!key)
-    {
-        fprintf(stderr, "Public key is invalid!\n");
-        exit(1);
-    }
-    unsigned char *encrypted = (unsigned char *)malloc(RSA_size(key));
-    if (!encrypted)
-    {
-        fprintf(stderr, "Memory allocation failed for encryption!\n");
-        exit(1);
-    }
-
-    int result = RSA_public_encrypt(len, msg, encrypted, key, RSA_PKCS1_PADDING);
-    if (result == -1)
-    {
-        char *err = (char *)malloc(130);
-        ERR_load_crypto_strings();
-        ERR_error_string(ERR_get_error(), err);
-        fprintf(stderr, "Encryption Error: %s\n", err);
-        free(err);
-        free(encrypted);
-        return nullptr;
-    }
-    return encrypted;
-}
-
-
-
 void handleErrors(void) {
     ERR_print_errors_fp(stderr);
     abort();
 }
+
+EVP_PKEY *client_privatekey = nullptr, *client_publickkey = nullptr;
+
+int generateRsaKeys(EVP_PKEY **rsa_privKey, EVP_PKEY **rsa_pubKey) {
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id (EVP_PKEY_RSA, nullptr);
+    if (!ctx) handleErrors();
+    if (EVP_PKEY_keygen_init(ctx) <= 0) handleErrors();
+    if (EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, 2048) <= 0) handleErrors();
+    if (EVP_PKEY_keygen(ctx, rsa_privKey) <= 0) handleErrors();
+    *rsa_pubKey = EVP_PKEY_dup(*rsa_privKey);
+    if (!*rsa_pubKey) handleErrors();
+    EVP_PKEY_CTX_free(ctx);
+    return 1;
+}
+
+int rsa_encrypt(u_char *plaintext, size_t plaintext_len, EVP_PKEY *publicKey, unsigned char **encrypted, size_t *encrypted_len) {
+    EVP_PKEY_CTX *ctx;
+    size_t outlen;
+    int ret;
+
+    // Create and initialize the context
+    ctx = EVP_PKEY_CTX_new(publicKey, NULL);
+    if (!ctx)
+        handleErrors();
+
+    if (EVP_PKEY_encrypt_init(ctx) <= 0)
+        handleErrors();
+
+    // Determine buffer length
+    if (EVP_PKEY_encrypt(ctx, NULL, &outlen, (unsigned char*)plaintext, plaintext_len) <= 0)
+        handleErrors();
+
+    *encrypted = (unsigned char*)malloc(outlen);
+    if (!*encrypted)
+        handleErrors();
+
+    if (EVP_PKEY_encrypt(ctx, *encrypted, &outlen, (unsigned char*)plaintext, plaintext_len) <= 0)
+        handleErrors();
+
+    *encrypted_len = outlen;
+
+    EVP_PKEY_CTX_free(ctx);
+    return 1; // Success
+}
+
+int rsa_decrypt(unsigned char *encrypted, size_t encrypted_len, EVP_PKEY *privateKey, unsigned char **decrypted, size_t *decrypted_len) {
+    EVP_PKEY_CTX *ctx;
+    size_t outlen;
+    int ret;
+
+    // Create and initialize the context
+    ctx = EVP_PKEY_CTX_new(privateKey, NULL);
+    if (!ctx)
+        handleErrors();
+
+    if (EVP_PKEY_decrypt_init(ctx) <= 0)
+        handleErrors();
+
+    // Determine buffer length
+    if (EVP_PKEY_decrypt(ctx, NULL, &outlen, encrypted, encrypted_len) <= 0)
+        handleErrors();
+
+    *decrypted = (unsigned char*)malloc(outlen);
+    if (!*decrypted)
+        handleErrors();
+
+    if (EVP_PKEY_decrypt(ctx, *decrypted, &outlen, encrypted, encrypted_len) <= 0)
+        handleErrors();
+
+    *decrypted_len = outlen;
+
+    EVP_PKEY_CTX_free(ctx);
+    return 1; // Success
+}
+
+int serializeEVP_PKEY(EVP_PKEY *key, char **buffer) {
+    BIO *bio = BIO_new(BIO_s_mem());
+    if (!bio)
+        return 0;
+
+    if (!PEM_write_bio_PUBKEY(bio, key)) { // Use PEM_write_bio_PrivateKey for private keys
+        BIO_free(bio);
+        return 0;
+    }
+
+    BUF_MEM *bio_buf;
+    BIO_get_mem_ptr(bio, &bio_buf);
+    *buffer = (char *)malloc(bio_buf->length + 1);
+    if (!*buffer) {
+        BIO_free(bio);
+        return 0;
+    }
+
+    memcpy(*buffer, bio_buf->data, bio_buf->length);
+    (*buffer)[bio_buf->length] = '\0';
+
+    BIO_free(bio);
+    return 1;
+}
+
+// Function to deserialize PEM formatted buffer to EVP_PKEY
+EVP_PKEY *deserializeEVP_PKEY(const char *buffer) {
+    BIO *bio = BIO_new_mem_buf(buffer, -1);
+    if (!bio) {
+        fprintf(stderr, "Error creating memory buffer\n");
+        return NULL;
+    }
+
+    EVP_PKEY *key = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL); // Use PEM_read_bio_PrivateKey for private keys
+    if (!key) {
+        fprintf(stderr, "Error reading PEM data\n");
+        ERR_print_errors_fp(stderr); // Print OpenSSL error messages
+        BIO_free(bio);
+        return NULL;
+    }
+
+    BIO_free(bio);
+    return key;
+}
+
+
 
 int generate_key_iv(unsigned char *key, unsigned char *iv) {
     if (!RAND_bytes(key, 32) || !RAND_bytes(iv, AES_BLOCK_SIZE)) {
