@@ -1,4 +1,4 @@
-# DEC branch
+# DEV branch
 This branch is unstable most of the time. Do not use it!
 
 # pizzeria
