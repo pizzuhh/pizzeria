@@ -65,7 +65,7 @@ void *rcv(void *arg) {
             printf("[<%s> -> <%s>]: %s\n", p.sender, p.receiver, p.data);
         }
         if (p.type == packet_type::SERVER_CLIENT_KICK) {
-            printf("You have been kicked by server administrator.");
+            printf("You have been kicked by server administrator.\nReason: %s\n", (p.data) ? p.data : "UNKOWN");
             term();
         }
         #endif

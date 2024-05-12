@@ -371,7 +371,7 @@ void *handle_client(void *arg) {
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
                             WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and kicked) by the filter!", cl->username, p.data));
                             send_message("Your message has been flagged by the filter!", cl);
-                            p_mod = packet2(packet_type::SERVER_CLIENT_KICK);
+                            p_mod = packet2("Kicked by filter.", "", "", packet_type::SERVER_CLIENT_KICK);
                             send_p(p_mod, *cl);
                             break;
                         // TODO(5): Implement the ban logic. For now kick the user
@@ -379,7 +379,7 @@ void *handle_client(void *arg) {
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
                             WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and banned) by the filter!", cl->username, p.data));
                             send_message("Your message has been flagged by the filter!", cl);
-                            p_mod = packet2(packet_type::SERVER_CLIENT_KICK);
+                            p_mod = packet2("Kicked by filter.", "", "", packet_type::SERVER_CLIENT_KICK);
                             send_p(p_mod, *cl);
                             break;
                         default:
