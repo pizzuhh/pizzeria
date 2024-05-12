@@ -314,6 +314,11 @@ void ban (client &cl) {
 void *handle_client(void *arg) {
     client *cl = (client *)arg;
     
+    sockaddr_in cl_addr;
+    socklen_t cl_addr_len = sizeof(cl_addr);
+    getpeername(cl->fd, (sockaddr*)&cl_addr, &cl_addr_len);
+    printf("%s\n", inet_ntoa(cl_addr.sin_addr));
+
     char id_buff[1024];
     recv(cl->fd, id_buff, 1024, 0);
     WRITELOG(INFO, "Received client's ID"); // logger goes out of scope. Why?
@@ -326,7 +331,7 @@ void *handle_client(void *arg) {
     memcpy(cl->username, username_buffer, MAX_INPUT);
 
     printf("client %s: has connected with username of: %s\n", cl->id, cl->username);
-    WRITELOG(INFO, formatString("client %s: has connected with username of: %s", cl->id, cl->username));
+    WRITELOG(INFO, formatString("client %s: has connected with username: %s", cl->id, cl->username));
 
     #ifdef CRYPTO
     // receive public key
@@ -341,6 +346,7 @@ void *handle_client(void *arg) {
     rsa_encrypt(server_aes_key, sizeof(server_aes_key), key, &encrypted_aes_key, &len);
     send(cl->fd, encrypted_aes_key, 256, 0);
     send(cl->fd, server_aes_iv, sizeof(server_aes_iv), 0);
+    WRITELOG(INFO, "Sending aes key and iv");
     #endif
     clients.push_back(cl);
     // send_message("test", cl->username, cl->username);

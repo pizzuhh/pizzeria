@@ -139,7 +139,7 @@ int main(int argc, char **argv)
         LOGERROR();
         exit(-1);
     }
-    printf("Server listens on 127.0.0.1:%d\n", port);
+    printf("Server listens on local port %d\n", port);
     if (listen(fd, 5) == -1) {
         perror("listen");
         LOGERROR();
