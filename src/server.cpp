@@ -139,7 +139,7 @@ int main(int argc, char **argv)
         LOGERROR();
         exit(-1);
     }
-    printf("Server listens on 127.0.0.1:%d\n", port);
+    printf("Server listens on local port %d\n", port);
     if (listen(fd, 5) == -1) {
         perror("listen");
         LOGERROR();
@@ -152,9 +152,7 @@ int main(int argc, char **argv)
 
     #ifdef CRYPTO
     // generate private-public key pair
-    GenerateKeyPair(&private_key_gen, &public_key_gen);
-    s_pubkey = LoadPublicKeyFromString((const char*)public_key_gen);
-    s_privkey = LoadPrivateKeyFromString((const char*)private_key_gen);
+    generate_key_iv(server_aes_key, server_aes_iv);
     WRITELOG(INFO, "[CRYPTO]: Generated key pairs");
     #endif
     pthread_t adminClient;
@@ -167,8 +165,6 @@ int main(int argc, char **argv)
             WRITELOG(INFO, "Accepted connection");
             client *cl = new client;
             cl->fd = cl_fd;
-            cl->addr = cl_addr;
-            // clients.push_back(cl);
             pthread_create(&p, 0, handle_client, (void *)cl);
             WRITELOG(INFO, "Created client thread");
         } else exit(-1);

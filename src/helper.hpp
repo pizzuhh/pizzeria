@@ -29,6 +29,8 @@
 // for the encryption support
 #ifdef CRYPTO
 #include <openssl/rsa.h>
+#include <openssl/aes.h>
+#include <openssl/rand.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
@@ -39,91 +41,201 @@ void print_error_and_abort(void) {
     abort();
 }
 
-unsigned char *private_key_gen, *public_key_gen;
-RSA *s_pubkey, *s_privkey;
-void GenerateKeyPair(unsigned char **privateKey, unsigned char **publicKey)
-{
-    RSA *rsa = RSA_generate_key(2048, 65537, NULL, NULL);
-    if (!rsa) print_error_and_abort();
-    // private key
-    BIO *priv_bio = BIO_new(BIO_s_mem());
-    if (!priv_bio) print_error_and_abort();
-    
-    PEM_write_bio_RSAPrivateKey(priv_bio, rsa, NULL, NULL, 0, NULL, NULL);
-    int privkeyLen = BIO_pending(priv_bio);
-    if (privkeyLen <= 0) print_error_and_abort();
-
-    *privateKey = (unsigned char *)calloc(privkeyLen, 1);
-    BIO_read(priv_bio, *privateKey, privkeyLen);
-
-    // public key
-    BIO *pub_bio = BIO_new(BIO_s_mem());
-    if (!pub_bio)print_error_and_abort();
-
-    PEM_write_bio_RSAPublicKey(pub_bio, rsa);
-    int pubkeyLen = BIO_pending(pub_bio);
-    if (pubkeyLen <= 0) print_error_and_abort();
-
-    *publicKey = (unsigned char *)calloc(pubkeyLen, 1);
-    BIO_read(pub_bio, *publicKey, pubkeyLen);
+void handleErrors(void) {
+    ERR_print_errors_fp(stderr);
+    abort();
 }
 
-RSA *LoadPrivateKeyFromString(const char *privateKeyStr)
-{
-    RSA *rsa = NULL;
-    BIO *bio = BIO_new_mem_buf(privateKeyStr, -1);
-    if (bio != NULL)
-    {
-        rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
-        if (!rsa) print_error_and_abort();
+EVP_PKEY *client_privatekey = nullptr, *client_publickkey = nullptr;
 
+int generateRsaKeys(EVP_PKEY **rsa_privKey, EVP_PKEY **rsa_pubKey) {
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id (EVP_PKEY_RSA, nullptr);
+    if (!ctx) handleErrors();
+    if (EVP_PKEY_keygen_init(ctx) <= 0) handleErrors();
+    if (EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, 2048) <= 0) handleErrors();
+    if (EVP_PKEY_keygen(ctx, rsa_privKey) <= 0) handleErrors();
+    *rsa_pubKey = EVP_PKEY_dup(*rsa_privKey);
+    if (!*rsa_pubKey) handleErrors();
+    EVP_PKEY_CTX_free(ctx);
+    return 1;
+}
+
+int rsa_encrypt(u_char *plaintext, size_t plaintext_len, EVP_PKEY *publicKey, unsigned char **encrypted, size_t *encrypted_len) {
+    EVP_PKEY_CTX *ctx;
+    size_t outlen;
+    int ret;
+
+    // Create and initialize the context
+    ctx = EVP_PKEY_CTX_new(publicKey, NULL);
+    if (!ctx)
+        handleErrors();
+
+    if (EVP_PKEY_encrypt_init(ctx) <= 0)
+        handleErrors();
+
+    // Determine buffer length
+    if (EVP_PKEY_encrypt(ctx, NULL, &outlen, (unsigned char*)plaintext, plaintext_len) <= 0)
+        handleErrors();
+
+    *encrypted = (unsigned char*)malloc(outlen);
+    if (!*encrypted)
+        handleErrors();
+
+    if (EVP_PKEY_encrypt(ctx, *encrypted, &outlen, (unsigned char*)plaintext, plaintext_len) <= 0)
+        handleErrors();
+
+    *encrypted_len = outlen;
+
+    EVP_PKEY_CTX_free(ctx);
+    return 1; // Success
+}
+
+int rsa_decrypt(unsigned char *encrypted, size_t encrypted_len, EVP_PKEY *privateKey, unsigned char **decrypted, size_t *decrypted_len) {
+    EVP_PKEY_CTX *ctx;
+    size_t outlen;
+    int ret;
+
+    // Create and initialize the context
+    ctx = EVP_PKEY_CTX_new(privateKey, NULL);
+    if (!ctx)
+        handleErrors();
+
+    if (EVP_PKEY_decrypt_init(ctx) <= 0)
+        handleErrors();
+
+    // Determine buffer length
+    if (EVP_PKEY_decrypt(ctx, NULL, &outlen, encrypted, encrypted_len) <= 0)
+        handleErrors();
+
+    *decrypted = (unsigned char*)malloc(outlen);
+    if (!*decrypted)
+        handleErrors();
+
+    if (EVP_PKEY_decrypt(ctx, *decrypted, &outlen, encrypted, encrypted_len) <= 0)
+        handleErrors();
+
+    *decrypted_len = outlen;
+
+    EVP_PKEY_CTX_free(ctx);
+    return 1; // Success
+}
+
+int serializeEVP_PKEY(EVP_PKEY *key, char **buffer) {
+    BIO *bio = BIO_new(BIO_s_mem());
+    if (!bio)
+        return 0;
+
+    if (!PEM_write_bio_PUBKEY(bio, key)) { // Use PEM_write_bio_PrivateKey for private keys
         BIO_free(bio);
+        return 0;
     }
-    return rsa;
-}
-RSA *LoadPublicKeyFromString(const char *publicKeyStr)
-{
-    RSA *rsa = NULL;
-    BIO *bio = BIO_new_mem_buf(publicKeyStr, -1);
-    if (bio != NULL)
-    {
-        rsa = PEM_read_bio_RSAPublicKey(bio, NULL, NULL, NULL);
-        if (!rsa) print_error_and_abort();
+
+    BUF_MEM *bio_buf;
+    BIO_get_mem_ptr(bio, &bio_buf);
+    *buffer = (char *)malloc(bio_buf->length + 1);
+    if (!*buffer) {
         BIO_free(bio);
+        return 0;
     }
-    return rsa;
-}
-unsigned char* Decrypt(const unsigned char* msg, RSA* key)
-{
-    if (!key)
-    {
-        fprintf(stderr, "Private key is invalid!\n");
-        exit(1);
-    }
-    size_t len = RSA_size(key);
-    u_char* decrypted = (u_char*)malloc(RSA_size(key));
-    int dlen = RSA_private_decrypt(len, msg, decrypted, key, RSA_PKCS1_PADDING);
-    if (dlen == -1) print_error_and_abort();
 
-    decrypted[dlen] = '\0';
-    return decrypted;
+    memcpy(*buffer, bio_buf->data, bio_buf->length);
+    (*buffer)[bio_buf->length] = '\0';
+
+    BIO_free(bio);
+    return 1;
 }
 
-
-unsigned char *Encrypt(const unsigned char *msg, RSA *key)
-{
-    size_t len = strlen((const char *)msg);
-    if (!key)
-    {
-        fprintf(stderr, "Public key is invalid!\n");
-        exit(1);
+// Function to deserialize PEM formatted buffer to EVP_PKEY
+EVP_PKEY *deserializeEVP_PKEY(const char *buffer) {
+    BIO *bio = BIO_new_mem_buf(buffer, -1);
+    if (!bio) {
+        fprintf(stderr, "Error creating memory buffer\n");
+        return NULL;
     }
-    unsigned char *encrypted = (unsigned char *)malloc(RSA_size(key));
-    int status = RSA_public_encrypt(len, msg, encrypted, key, RSA_PKCS1_PADDING);
-    if (status == -1) print_error_and_abort();
 
-    return encrypted;
+    EVP_PKEY *key = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL); // Use PEM_read_bio_PrivateKey for private keys
+    if (!key) {
+        fprintf(stderr, "Error reading PEM data\n");
+        ERR_print_errors_fp(stderr); // Print OpenSSL error messages
+        BIO_free(bio);
+        return NULL;
+    }
+
+    BIO_free(bio);
+    return key;
 }
+
+
+
+int generate_key_iv(unsigned char *key, unsigned char *iv) {
+    if (!RAND_bytes(key, 32) || !RAND_bytes(iv, AES_BLOCK_SIZE)) {
+        fprintf(stderr, "Failed to generate key and IV.\n");
+        return -1;
+    }
+    return 0;
+}
+
+unsigned char *aes_encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, int *ciphertext_len) {
+    EVP_CIPHER_CTX *ctx;
+    int len;
+
+    *ciphertext_len = plaintext_len + AES_BLOCK_SIZE; // allocate space for padding
+    unsigned char *ciphertext = new u_char[*ciphertext_len];
+    if (!ciphertext) handleErrors();
+
+    if (!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+    if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+        handleErrors();
+
+    if (1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+        handleErrors();
+
+    *ciphertext_len = len; // update the length with the bytes written
+
+    if (1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
+        handleErrors();
+
+    *ciphertext_len += len; // add the last block to the total length
+
+    EVP_CIPHER_CTX_free(ctx);
+    return ciphertext;
+}
+
+unsigned char *aes_decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, int *plaintext_len) {
+    EVP_CIPHER_CTX *ctx;
+    int len;
+    unsigned char *plaintext = new u_char[ciphertext_len]; // ciphertext length is maximum possible size of plaintext
+    if (!plaintext) handleErrors();
+
+    if (!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+    if (1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+        handleErrors();
+
+    if (1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
+        handleErrors();
+
+    *plaintext_len = len; // update the length with the bytes written
+
+    if (1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) {
+        handleErrors(); // note: decryption errors can occur if incorrect key/iv is used or if the ciphertext is tampered
+    }
+
+    *plaintext_len += len; // add the last block to the total length
+
+    EVP_CIPHER_CTX_free(ctx);
+    return plaintext;
+}
+/*
+* returns the total size after the data is padded
+*/
+int calc_padding (int init_legnth) {
+    int mod = init_legnth % AES_BLOCK_SIZE;
+    return init_legnth + (AES_BLOCK_SIZE - mod);
+}
+
+u_char server_aes_key[32], server_aes_iv[AES_BLOCK_SIZE], client_aes_key[32], client_aes_iv[AES_BLOCK_SIZE];
 #endif
 
 
@@ -137,9 +249,9 @@ size_t writeCallback(void *ptr, size_t size, size_t nmemb, std::string *s) {
 }
 /*
 * @return 
-* `-1` - check failed
-* `0` - no update
-* `1` - update available
+* `-1`  -     check failed
+* `0`   -     no update
+* `1`   -     update available
 */
 int checkForUpdate() {
     
@@ -222,11 +334,46 @@ struct packet
     }
 };
 
-struct packet_test {
-    uint8_t type;
-    char data[1024];
+enum class packet_type : char {
+        MESSAGE = 0,
+        PRIVATE_MESSAGE = 1,
+        CLIENT_CLOSE = 2,
+        SERVER_CLIENT_KICK = 3,
+        AUTH = 4,
+        GENERIC = 10
 };
+#define PACKET_SIZE 1537
+#define PADDED_PACKET_SIZE 1552
 
+struct packet2 {
+     
+    packet_type type;
+    char sender[MAX_INPUT+1];
+    char receiver[MAX_INPUT+1];
+    char data[MAX_LEN];
+    packet2 (const char *data, const char *sender, const char *receiver, packet_type type) {
+        this->type = type;
+        strncpy(this->data,     data,       sizeof(this->data));
+        strncpy(this->sender,   sender,     sizeof(this->sender));
+        strncpy(this->receiver, receiver,   sizeof(this->receiver));
+    }
+    packet2 (packet_type type) {
+        this->type = type;
+    }
+    packet2 (){}
+    char* serialize() {
+        size_t size = sizeof(this->type) + sizeof(this->receiver) + sizeof(this->sender) + sizeof(this->data);
+        char* ret = new char[size];
+        memcpy(ret, this, size);
+        return ret;
+    }
+    static packet2 deserialize(char* data) {
+        size_t size = sizeof(packet2::type) + sizeof(packet2::receiver) + sizeof(packet2::sender) + sizeof(packet2::data);
+        packet2 packet;
+        memcpy(&packet, data, size);
+        return packet;
+    }
+};
 
 bool isIp(const char* x)
 {

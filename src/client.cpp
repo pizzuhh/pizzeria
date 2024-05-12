@@ -59,7 +59,7 @@ int main()
     #ifdef CRYPTO
     // generate public and private key
     
-    GenerateKeyPair(&privateKey, &publicKey);
+    generateRsaKeys(&client_privatekey, &client_publickkey);
     #endif
     if (connect(client_socket, reinterpret_cast<const sockaddr*>(&server_addr), sizeof(server_addr)) == -1)
     {
@@ -96,11 +96,18 @@ int main()
     
     #ifdef CRYPTO
     // receive server's public key
-    recv(client_socket, pubkey, 1024, 0);
-    // send client's public key so we can encrypt the message later
-    send(client_socket, publicKey, 1024, 0);
-    // printf("%s\n", pubkey);
-    c2s_pubkey = LoadPublicKeyFromString(pubkey);
+    
+    char *buff;
+    serializeEVP_PKEY(client_publickkey, &buff);
+    send(client_socket, buff, 1024, 0);
+    u_char b[256];
+    recv(client_socket, &b, 256, 0);
+    recv(client_socket, client_aes_iv, sizeof(client_aes_iv), 0);
+    u_char *dec;
+    size_t s;
+    rsa_decrypt(b, 256, client_privatekey, &dec, &s);
+    strncpy((char*)client_aes_key, (char*)dec, 32);
+
     #endif
     printf("Welcome to the chat room (%s:%d)\n", ip, port);
     delete[] username;
