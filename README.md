@@ -46,10 +46,11 @@ After that you need to create 3 threads:
 2. sender (send messages to the server)
 3. heartbeat (every second send `HRT` packet to the server)
 
-# 3.3
+# 3.4
 ## Changes
-- Added filter.
-- Fixed seg fault (client) when exiting
+- Moved to AES.
+- New packet system.
+- Logging hashed ips. (Needed for bans)
 ## The filter
 The filter is configured by `server-cfg.json`.
 
