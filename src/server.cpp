@@ -166,8 +166,6 @@ int main(int argc, char **argv)
             last_id++;
             client *cl = new client;
             cl->fd = cl_fd;
-            cl->addr = cl_addr;
-            // clients.push_back(cl);
             pthread_create(&p, 0, handle_client, (void *)cl);
             WRITELOG(INFO, "Created client thread");
         } else exit(-1);

@@ -106,7 +106,6 @@ int main()
     u_char *dec;
     size_t s;
     rsa_decrypt(b, 256, client_privatekey, &dec, &s);
-    printf("%ld\n", s);
     strncpy((char*)client_aes_key, (char*)dec, 32);
 
     #endif

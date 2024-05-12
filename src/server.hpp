@@ -1,4 +1,5 @@
 #pragma once
+#include <openssl/sha.h>
 /*
 This has the implementations of most functions used server.cpp
 from the client code to keep it clean
@@ -29,31 +30,14 @@ void fsend_message(char *fmt, ...);
 
 // https://files.pizzuhh.dev/pizLogger.hpp
 #include "pizLogger.hpp"
-#define WRITELOG(type, msg) \
-do { \
-    if (logging) { \
-        logger->writelog<type, 0, 0>(msg); \
-    } \
-} while(0)
+#define WRITELOG(type, msg) logging == true ? logger->writelog<type, 0, 0>(msg) : (void)0
 
-#define LOGERROR() \
-if (logging) { \
-    logger->logError(); \
-}
-#define CLOSELOGGER() \
-do { \
-    if (logging) { \
-        logger->CloseLogger(); \
-    } \
-} while(0)
 
-#define DELETELOG() \
-do { \
-    if (logging) { \
-        logger->DeleteLog(); \
-    } \
-} while(0)
+#define LOGERROR() logging == true ? logger->logError() : (void)0
 
+#define CLOSELOGGER() logging == true ? logger->CloseLogger() : (void)0
+
+#define DELETELOG() logging == true ? logger->DelteLog() : (void)0
 
 bool defaultPort = false, logging = false;
 char *logFile;
@@ -67,7 +51,7 @@ struct client
     // int id;
     char id[1024];
     char username[MAX_INPUT];
-    sockaddr addr;
+    sockaddr_in addr;
     bool valid = true;
 #ifdef CRYPTO
     char plainTextKey[1024];
@@ -314,15 +298,21 @@ void ban (client &cl) {
 void *handle_client(void *arg) {
     client *cl = (client *)arg;
     
-    sockaddr_in cl_addr;
-    socklen_t cl_addr_len = sizeof(cl_addr);
-    getpeername(cl->fd, (sockaddr*)&cl_addr, &cl_addr_len);
-    printf("%s\n", inet_ntoa(cl_addr.sin_addr));
-
+    socklen_t cl_addr_len = sizeof(cl->addr);
+    getpeername(cl->fd, (sockaddr*)&cl->addr, &cl_addr_len);
+    u_char *hashed_ip = new u_char[32];
+    char *hashed_ip_hex = new char[65];
+    SHA256((u_char*)inet_ntoa(cl->addr.sin_addr), strlen(inet_ntoa(cl->addr.sin_addr)+1), hashed_ip);
+    for (size_t i = 0; i < 32; i++)
+    {
+        snprintf(&hashed_ip_hex[i*2], 3, "%02X", hashed_ip[i]);
+    }
+    //TODO: When ban is done check here for a match.
+    delete[] hashed_ip;
+    WRITELOG(INFO, format_string("Client's hashed ip: %s", hashed_ip_hex));
     char id_buff[1024];
     recv(cl->fd, id_buff, 1024, 0);
     WRITELOG(INFO, "Received client's ID"); // logger goes out of scope. Why?
-
     memcpy(cl->id, id_buff, 1024);
 
     char username_buffer[MAX_INPUT];
@@ -400,6 +390,7 @@ void *handle_client(void *arg) {
                     }
                 }
             } else {
+                WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
                 printf("<%s>: %s\n", cl->username, p.data);
                 send_message(p.data, cl->username);
             }
@@ -421,6 +412,7 @@ void *handle_client(void *arg) {
         }
         else if (p.type == packet_type::CLIENT_CLOSE) {
             printf("%s has disconnected\n", cl->username);
+            send_message(format_string("%s: has disconnected", cl->username));
             break;
         }
         #endif
