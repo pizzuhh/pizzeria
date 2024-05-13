@@ -4,7 +4,7 @@ A basic chat app written in C++ using unix sockets.
 The pre-built binaries are outdated most of the time so it's recommended to build the project yourself. Check [Building](#Building)
 - [Features](#features)
 - [Building](#building)
-- [3.3 Change log](#33)
+- [3.4 Change log](#34)
 
 # Contributing
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for more information
