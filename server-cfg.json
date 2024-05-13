@@ -6,10 +6,10 @@
             "words1", "word2"
         ]
     },
-    "banned-uuids": {
-        "uuid": "reason"
-    },
-    "banned-ips": {
-        "hashed-ip": "reason"
-    }
+    "banned-clients" : [
+        {"client-hashed-ip" : "reason"}
+    ],
+    "admins" : [
+        "uuid1", "uuid2"
+    ]
 }

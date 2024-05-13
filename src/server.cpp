@@ -56,21 +56,29 @@ int main(int argc, char **argv)
 
     // parse the log file
     std::fstream cfg(DEFAULT_CFG_FILE_LOCATION);
-    std::string cfg_data((std::istreambuf_iterator<char>(cfg)), std::istreambuf_iterator<char>());
-    cfg.close();
-    json _json = json::parse(cfg_data);
-    filter_on       = _json["filter"]["enabled"];
-    filter_mode     = _json["filter"]["mode"];
-    if (_json["filter"]["filter"].is_array()) {
-        for (const auto &item : _json["filter"]["filter"]) {
-            words.append(item.get<std::string>() + "|");
+    if (cfg.is_open()) {
+        std::string cfg_data((std::istreambuf_iterator<char>(cfg)), std::istreambuf_iterator<char>());
+        cfg.close();
+        json _json = json::parse(cfg_data);
+        filter_on       = _json["filter"]["enabled"];
+        filter_mode     = _json["filter"]["mode"];
+        if (_json["filter"]["filter"].is_array()) {
+            for (const auto &item : _json["filter"]["filter"]) {
+                words.append(item.get<std::string>() + "|");
+            }
+            if (!words.empty()) words.pop_back();
         }
-        if (!words.empty()) words.pop_back();
+        WRITELOG(INFO, formatString("[CONFIG] filter status: %s", filter_on == 1 ? "ON" : "OFF"));
+        WRITELOG(INFO, formatString("[CONFIG] filter mode: %s", filter_mode == DO_NOT_SEND_MESSAGE ? "DO_NOT_SEND_MESSAGE" : 
+                                                                (filter_mode == KICK_USER ? "KICK_USER" : 
+                                                                filter_mode == BAN_USER ? "BAN_USER" : "UNDEFINED")));
+    } else {
+        fprintf(stderr, "WARNING: %s cannot be opened! Either it doesn't exist or something else!", DEFAULT_CFG_FILE_LOCATION);
+        WRITELOG(WARNING, "Failed to open config file!");
+        filter_on = false;
+        WRITELOG(WARNING, "[CONFIG (error)] disabled filter due to issue with opening file!");
     }
-    WRITELOG(INFO, formatString("[CONFIG] filter status: %s", filter_on == 1 ? "ON" : "OFF"));
-    WRITELOG(INFO, formatString("[CONFIG] filter mode: %s", filter_mode == DO_NOT_SEND_MESSAGE ? "DO_NOT_SEND_MESSAGE" : 
-                                                            (filter_mode == KICK_USER ? "KICK_USER" : 
-                                                            filter_mode == BAN_USER ? "BAN_USER" : "UNDEFINED")));
+   
     // warn if the server is not running with encryption
     #ifndef CRYPTO
     fprintf(stderr, "SERVER IS RUNNING WITHOUT ENCRYPTION!\nTO USE ENCRYPTION REBUILD THE SERVER AND THE CLIENT!\n");

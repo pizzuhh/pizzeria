@@ -48,15 +48,16 @@ using std::vector;
 struct client
 {
     int fd;
-    // int id;
     char id[1024];
     char username[MAX_INPUT];
     sockaddr_in addr;
     bool valid = true;
-#ifdef CRYPTO
+    char hashedIp[32];
+    char clientSettings; // 8 bit value for 8 settings. (Idk how many of them will be used but 1 surely will so we go with minimum size)
+    #ifdef CRYPTO
     char plainTextKey[1024];
     EVP_PKEY *publicKey;
-#endif
+    #endif
 };
 
 vector<client *> clients;
@@ -142,6 +143,12 @@ void *parse_command(const std::string command) {
                 WRITELOG(INFO, formatString("Kicked %s, reason: %s", target, p.data));
                 send_p(p, *c);
             }
+        }
+    }
+    if (args[0] == "lsmem") {
+        for (client *cl : clients) { 
+            printf("Name: %s\nUUID:%s\nHashed-Ip: %s\nFD:%d\n\n", 
+            cl->username, cl->id, cl->hashedIp, cl->fd);
         }
     }
     return 0;
@@ -309,6 +316,7 @@ void *handle_client(void *arg) {
     }
     //TODO: When ban is done check here for a match.
     delete[] hashed_ip;
+    strncpy(cl->hashedIp, (char*)hashed_ip_hex, 32);
     WRITELOG(INFO, format_string("Client's hashed ip: %s", hashed_ip_hex));
     char id_buff[1024];
     recv(cl->fd, id_buff, 1024, 0);
