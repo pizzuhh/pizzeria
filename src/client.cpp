@@ -61,11 +61,7 @@ int main()
     
     generateRsaKeys(&client_privatekey, &client_publickkey);
     #endif
-    if (connect(client_socket, reinterpret_cast<const sockaddr*>(&server_addr), sizeof(server_addr)) == -1)
-    {
-        perror("connect");
-        term(true);
-    }
+    
     
     // send server info
     const char* id    = gen_priv_uuid();
@@ -87,6 +83,12 @@ int main()
                 if (username[i] == ' ') username[i] = '-';
             break;
         }
+    }
+
+    if (connect(client_socket, reinterpret_cast<const sockaddr*>(&server_addr), sizeof(server_addr)) == -1)
+    {
+        perror("connect");
+        term(true);
     }
 
     send(client_socket, id, 1024, 0);

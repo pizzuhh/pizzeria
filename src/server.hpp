@@ -404,11 +404,11 @@ void *handle_client(void *arg) {
                 send_message("Error while sending message!", cl); 
                 continue;
             }
-            strncpy(target, pm.substr(0, pos).c_str(), sizeof(p.receiver));
-            target[sizeof(target) - 1] = '\0'; // Ensure null-termination
-            strncpy(msg, pm.substr(pos + 1).c_str(), sizeof(p.data));
-            msg[sizeof(msg) - 1] = '\0'; // Ensure null-termination
-            send_message(msg, cl->username, target); // Make sure send_message is properly implemented
+            strncpy(target, pm.substr(0, pos).c_str(), sizeof(p.receiver)-1);
+            target[sizeof(target) - 1] = '\0'; 
+            strncpy(msg, pm.substr(pos + 1).c_str(), sizeof(p.data)-1);
+            msg[sizeof(msg) - 1] = '\0'; 
+            send_message(msg, cl->username, target);
         }
         else if (p.type == packet_type::CLIENT_CLOSE) {
             printf("%s has disconnected\n", cl->username);

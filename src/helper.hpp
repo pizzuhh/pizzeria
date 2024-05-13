@@ -63,7 +63,6 @@ int generateRsaKeys(EVP_PKEY **rsa_privKey, EVP_PKEY **rsa_pubKey) {
 int rsa_encrypt(u_char *plaintext, size_t plaintext_len, EVP_PKEY *publicKey, unsigned char **encrypted, size_t *encrypted_len) {
     EVP_PKEY_CTX *ctx;
     size_t outlen;
-    int ret;
 
     // Create and initialize the context
     ctx = EVP_PKEY_CTX_new(publicKey, NULL);
@@ -93,7 +92,6 @@ int rsa_encrypt(u_char *plaintext, size_t plaintext_len, EVP_PKEY *publicKey, un
 int rsa_decrypt(unsigned char *encrypted, size_t encrypted_len, EVP_PKEY *privateKey, unsigned char **decrypted, size_t *decrypted_len) {
     EVP_PKEY_CTX *ctx;
     size_t outlen;
-    int ret;
 
     // Create and initialize the context
     ctx = EVP_PKEY_CTX_new(privateKey, NULL);
@@ -353,9 +351,9 @@ struct packet2 {
     char data[MAX_LEN];
     packet2 (const char *data, const char *sender, const char *receiver, packet_type type) {
         this->type = type;
-        strncpy(this->data,     data,       sizeof(this->data));
-        strncpy(this->sender,   sender,     sizeof(this->sender));
-        strncpy(this->receiver, receiver,   sizeof(this->receiver));
+        strncpy(this->data,     data,       sizeof(this->data)-1);
+        strncpy(this->sender,   sender,     sizeof(this->sender)-1);
+        strncpy(this->receiver, receiver,   sizeof(this->receiver)-1);
     }
     packet2 (packet_type type) {
         this->type = type;

@@ -65,13 +65,14 @@ void *rcv(void *arg) {
             printf("[<%s> -> <%s>]: %s\n", p.sender, p.receiver, p.data);
         }
         if (p.type == packet_type::SERVER_CLIENT_KICK) {
-            printf("You have been kicked by server administrator.\nReason: %s\n", (p.data) ? p.data : "UNKOWN");
+            printf("You have been kicked by server administrator.\nReason: %s\n", (strlen(p.data) > 0) ? p.data : "UNKOWN");
             term();
         }
         #endif
         memset(buff, 0, PADDED_PACKET_SIZE);
     }
     delete[] buff;
+    return nullptr;
 }
 void send_message_private(std::string msg)
 {
@@ -96,7 +97,10 @@ void send_message (std::string msg) {
     int len;
     u_char *encrypted = aes_encrypt ((u_char*)data, 1537, client_aes_key, client_aes_iv, &len);
     send(client_socket, encrypted, len, 0);
+    #else
+    send(client_socket, data, PACKET_SIZE, 0); // TODO: Implement non decryption stuff
     #endif
+    delete[] data;
 }
 void *snd(void *arg)
 {
