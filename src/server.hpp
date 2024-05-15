@@ -11,17 +11,25 @@ Also will be used for the GUI app
 #include <getopt.h>
 #include <limits.h>
 #include <regex>
+#include <map>
 
+std::fstream cfg;
+json _json;
+std::map<std::string, std::string> banned;
 std::vector<std::string> filterKeywords;
 std::string words;
 bool filter_on;
 uint8_t filter_mode;
+char *cfg_path;
+
 enum filter_mode_enum {
     DO_NOT_SEND_MESSAGE = 0,
     KICK_USER = 1,
     BAN_USER = 2
 };
 
+
+int load_config();
 void *handle_client(void *arg);
 void *server_client(void *arg);
 void send_message(char *msg, char *sender);
@@ -62,6 +70,39 @@ struct client
 
 vector<client *> clients;
 Logger *logger = nullptr;
+void ban (client &cl);
+
+int load_config() {
+    cfg.open(cfg_path, std::ios::app | std::ios::in | std::ios::out);
+    if (!cfg.is_open()) return 0;
+    cfg.seekg(0, std::ios::beg);
+    std::string cfg_data((std::istreambuf_iterator<char>(cfg)), std::istreambuf_iterator<char>());
+    cfg.close();
+    _json = json::parse(cfg_data);
+    filter_on       = _json["filter"]["enabled"];
+    filter_mode     = _json["filter"]["mode"];
+    words.clear();
+    if (_json["filter"]["filter"].is_array()) {
+        for (const auto &item : _json["filter"]["filter"]) {
+            words.append(item.get<std::string>() + "|");
+        }
+        if (!words.empty()) words.pop_back();
+    }
+    banned.clear();
+    if (_json["banned-clients"].is_array()) {
+        banned.clear();
+        for (const auto &item : _json["banned-clients"]) {
+            if (item.is_object() && !item.is_null()) {
+                for (const auto &i : item.items()) {
+                    banned[i.key()] = i.value().get<std::string>();
+                }
+            }
+        }
+    }
+    WRITELOG(INFO, "Loaded/Reloaded config!");
+    return 1;
+}
+
 
 void broken_pipe()
 {
@@ -150,6 +191,22 @@ void *parse_command(const std::string command) {
             printf("Name: %s\nUUID:%s\nHashed-Ip: %s\nFD:%d\n\n", 
             cl->username, cl->id, cl->hashedIp, cl->fd);
         }
+    }
+    if (args[0] == "ban") {
+        if (args[1].empty()) {
+            printf("Ban requires user name!\n"); return nullptr;
+        }
+        for (client *c : clients) {
+            if (!strcmp(c->username, args[1].c_str())) {
+                packet2 p("Banned from the server", "", "", packet_type::SERVER_CLIENT_KICK);
+                WRITELOG(INFO, formatString("Kicked %s, reason: %s", c->username, p.data));
+                send_p(p, *c);
+                ban(*c);
+            }
+        }
+    }
+    if (args[0] == "cfgrld") {
+        load_config();
     }
     return 0;
 }
@@ -299,7 +356,14 @@ bool filterMessage(const std::string &message) {
 }
 
 void ban (client &cl) {
-    //TODO(5): Implement it lol
+    json obj;
+    obj[cl.username] = cl.hashedIp;
+    _json["banned-clients"].push_back(obj);
+    banned.insert({cl.username, cl.hashedIp});
+    cfg.open(cfg_path, std::ios::out | std::ios::trunc);
+    cfg.write(_json.dump(4).c_str(), _json.dump(4).size());
+    cfg.flush();
+    cfg.close();
 }
 
 void *handle_client(void *arg) {
@@ -317,10 +381,24 @@ void *handle_client(void *arg) {
     //TODO: When ban is done check here for a match.
     delete[] hashed_ip;
     strncpy(cl->hashedIp, (char*)hashed_ip_hex, 32);
+    packet2 p;
+    for (auto &hash : banned) {
+        if (hash.second == cl->hashedIp) {
+            p = packet2(packet_type::SERVER_CLIENT_KICK);
+            cl->valid = false;
+            char *m = p.serialize();
+            send(cl->fd, m, PACKET_SIZE, 0);
+            return nullptr;
+        }
+    }
+    p = packet2(packet_type::GENERIC);
+    char *m = p.serialize();
+    send(cl->fd, m, PACKET_SIZE, 0);
+
     WRITELOG(INFO, format_string("Client's hashed ip: %s", hashed_ip_hex));
     char id_buff[1024];
     recv(cl->fd, id_buff, 1024, 0);
-    WRITELOG(INFO, "Received client's ID"); // logger goes out of scope. Why?
+    WRITELOG(INFO, "Received client's ID");
     memcpy(cl->id, id_buff, 1024);
 
     char username_buffer[MAX_INPUT];

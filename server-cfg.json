@@ -1,15 +1,1 @@
-{
-    "filter": {
-        "enabled": true,
-        "mode": 1,
-        "filter": [
-            "words1", "word2"
-        ]
-    },
-    "banned-clients" : [
-        {"client-hashed-ip" : "reason"}
-    ],
-    "admins" : [
-        "uuid1", "uuid2"
-    ]
-}
+/home/pizza/.config/pizzeria/server-cfg.json

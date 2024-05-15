@@ -5,7 +5,22 @@ This file contains the code for the server side
 written by: pizzuhh
 */
 #include "server.hpp"
-// main function
+#include <sys/stat.h>
+
+const char* jsonString = "{\n"
+    "    \"filter\": {\n"
+    "        \"enabled\": false,\n"
+    "        \"mode\": 1,\n"
+    "        \"filter\": [\n"
+    "        ]\n"
+    "    },\n"
+    "    \"banned-clients\" : [\n"
+    "    ],\n"
+    "    \"admins\" : [\n"
+    "    ]\n"
+    "}";
+
+
 int main(int argc, char **argv)
 {
     #ifndef DISABLE_UPDATE_CHECK
@@ -16,7 +31,10 @@ int main(int argc, char **argv)
         printf("New update has been found!\nGo download it from: https://github.com/pizzuhh/pizzeria/releases/latest\n\n");
     }
     #endif
-
+    cfg_path = getcfgpath();
+    #ifdef DEBUG
+    printf("%s\n", cfg_path);
+    #endif
     struct option opt[] = {
         {"log", optional_argument, 0, 'l'},
         {"default-port", no_argument, 0, 'd'},
@@ -54,31 +72,29 @@ int main(int argc, char **argv)
     }
     WRITELOG(INFO, "Reading config file.");
 
-    // parse the log file
-    std::fstream cfg(DEFAULT_CFG_FILE_LOCATION);
-    if (cfg.is_open()) {
-        std::string cfg_data((std::istreambuf_iterator<char>(cfg)), std::istreambuf_iterator<char>());
-        cfg.close();
-        json _json = json::parse(cfg_data);
-        filter_on       = _json["filter"]["enabled"];
-        filter_mode     = _json["filter"]["mode"];
-        if (_json["filter"]["filter"].is_array()) {
-            for (const auto &item : _json["filter"]["filter"]) {
-                words.append(item.get<std::string>() + "|");
+    int loaded = load_config();
+    if (!loaded) {
+        cfg.open(cfg_path, std::ios::app | std::ios::in | std::ios::out);
+        if (!cfg.is_open()) {
+            char *dir = (char*)strrchr(cfg_path, '/');
+            if (!dir) {
+                fputs("Can't do string stuff", stderr);
+                abort();
             }
-            if (!words.empty()) words.pop_back();
+            *dir = '\0';
+            mkdir(cfg_path, S_IRWXU | S_IRWXG | S_IRWXO);
+            *dir = '/';
+            cfg.open(cfg_path, std::ios::out | std::ios::app | std::ios::in);
+            cfg.write(jsonString, strlen(jsonString));
+            cfg.flush();
+            chmod(cfg_path, S_IRWXU | S_IRWXG | S_IRWXO);
         }
-        WRITELOG(INFO, formatString("[CONFIG] filter status: %s", filter_on == 1 ? "ON" : "OFF"));
-        WRITELOG(INFO, formatString("[CONFIG] filter mode: %s", filter_mode == DO_NOT_SEND_MESSAGE ? "DO_NOT_SEND_MESSAGE" : 
-                                                                (filter_mode == KICK_USER ? "KICK_USER" : 
-                                                                filter_mode == BAN_USER ? "BAN_USER" : "UNDEFINED")));
-    } else {
-        fprintf(stderr, "WARNING: %s cannot be opened! Either it doesn't exist or something else!", DEFAULT_CFG_FILE_LOCATION);
-        WRITELOG(WARNING, "Failed to open config file!");
-        filter_on = false;
-        WRITELOG(WARNING, "[CONFIG (error)] disabled filter due to issue with opening file!");
+        load_config();
     }
-   
+    WRITELOG(INFO, formatString("[CONFIG] filter status: %s", filter_on == 1 ? "ON" : "OFF"));
+    WRITELOG(INFO, formatString("[CONFIG] filter mode: %s", filter_mode == DO_NOT_SEND_MESSAGE ? "DO_NOT_SEND_MESSAGE" : 
+                                                            (filter_mode == KICK_USER ? "KICK_USER" : 
+                                                            filter_mode == BAN_USER ? "BAN_USER" : "UNDEFINED")));
     // warn if the server is not running with encryption
     #ifndef CRYPTO
     fprintf(stderr, "SERVER IS RUNNING WITHOUT ENCRYPTION!\nTO USE ENCRYPTION REBUILD THE SERVER AND THE CLIENT!\n");

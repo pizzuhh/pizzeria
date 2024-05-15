@@ -90,7 +90,20 @@ int main()
         perror("connect");
         term(true);
     }
-
+    char *buffer = new char[PACKET_SIZE];
+    recv(client_socket, buffer, PACKET_SIZE, 0);
+    packet2 p = packet2::deserialize(buffer);
+    switch (p.type)
+    {
+    case packet_type::SERVER_CLIENT_KICK:
+        printf("You have been kicked!\n");
+        term();
+        break;
+    case packet_type::GENERIC:
+        break;
+    default:
+        break;
+    }
     send(client_socket, id, 1024, 0);
     delete[] id;
     // msleep(10); // if something brakes uncomment this

@@ -3,6 +3,7 @@ CXXFLAGS= -Wall -O2  -Wno-stringop-truncation
 DBCXXFLAGS=-Wall -g -O0
 LDFLAGS=-lcurl -luuid
 BUILD=./build
+MAKEOPTS+=-j2
 
 all: build
 

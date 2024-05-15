@@ -465,3 +465,9 @@ std::vector<std::string> split(const std::string &str, const char del = ' ')
 
 
 #define KiB(x) (x * 1024)
+
+char *getcfgpath() {
+    char *home = (char*)malloc(snprintf(nullptr, 0, "%s/.config/pizzeria/server-cfg.json", getenv("HOME")));
+    sprintf(home, "%s/.config/pizzeria/server-cfg.json", getenv("HOME"));
+    return home;
+}
