@@ -213,9 +213,13 @@ void *parse_command(const std::string command) {
         auto it = banned.find(args[1]);
         if (it == banned.end()) fprintf(stderr, "Couldn't not find member\n");
         banned.erase(it);
-        for (const auto &mem : banned) {
-            _json["banned-clients"][mem.first] = mem.second;
-
+        _json["banned-clients"].clear();
+        if (!banned.empty()) {
+            for (const auto &mem : banned) {
+                json m;
+                m[mem.first] = mem.second;
+                _json["banned-clients"].push_back(m);
+            }
         }
         cfg.open(cfg_path, std::ios::out | std::ios::trunc);
         cfg.write(_json.dump(4).c_str(), _json.dump(4).size());
