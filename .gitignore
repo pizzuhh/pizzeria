@@ -4,4 +4,3 @@
 /.vscode/
 *.log
 src/server-cfg.json
-server-cfg.json
