@@ -1,0 +1,10 @@
+{
+    "admins": [],
+    "banned-clients": [
+    ],
+    "filter": {
+        "enabled": false,
+        "filter": [],
+        "mode": 1
+    }
+}
