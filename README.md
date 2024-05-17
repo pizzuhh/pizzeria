@@ -4,7 +4,7 @@ A basic chat app written in C++ using unix sockets.
 The pre-built binaries are outdated most of the time so it's recommended to build the project yourself. Check [Building](#Building)
 - [Features](#features)
 - [Building](#building)
-- [3.4 Change log](#34)
+- [3.4.1 Change log](#341)
 
 # Contributing
 Read [CONTRIBUTING.md](CONTRIBUTING.md) for more information
@@ -46,19 +46,12 @@ After that you need to create 3 threads:
 2. sender (send messages to the server)
 3. heartbeat (every second send `HRT` packet to the server)
 
-# 3.4
+# 3.4.1
 ## Changes
-- Moved to AES.
-- New packet system.
-- Logging hashed ips. (Needed for bans)
-## The filter
-The filter is configured by `server-cfg.json`.
-
-`enabled` - true - the filter is enabled or false - the filter is disabled
-
-`mode` - 0 - Messages won't be send, 1 - The message won't be send and the user will be kicked, 2 - The message won't be send and the user will be banned (banning is not implemented yet)
-
-`filter` - JSON array of the words you want to filter. <b>DO NOT LEAVE THIS EMPTY IF `enabled` IS SET TO `true`.</b> (please the remove the placeholder words).
+### Server configuration
+(More details [here](https://github.com/pizzuhh/pizzeria/wiki/Server-configuration))
+### Other
+- Added more commands. Check the [commands page](https://github.com/pizzuhh/pizzeria/wiki/Commands) in the wiki for more information about them.
 
 # Docker image for the server
 If you want to run the server using docker:

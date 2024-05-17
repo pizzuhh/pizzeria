@@ -186,13 +186,13 @@ void *parse_command(const std::string command) {
             }
         }
     }
-    if (args[0] == "lsmem") {
+    else if (args[0] == "lsmem") {
         for (client *cl : clients) { 
             printf("Name: %s\nUUID:%s\nHashed-Ip: %s\nFD:%d\n\n", 
             cl->username, cl->id, cl->hashedIp, cl->fd);
         }
     }
-    if (args[0] == "ban") {
+    else if (args[0] == "ban") {
         if (args[1].empty()) {
             printf("Ban requires user name!\n"); return nullptr;
         }
@@ -205,8 +205,22 @@ void *parse_command(const std::string command) {
             }
         }
     }
-    if (args[0] == "cfgrld") {
+    else if (args[0] == "cfgrld") {
         load_config();
+    }
+    else if (args[0] == "unban") {
+        if (args[1].empty()) fprintf(stderr, "#! ban <member>. Member argument not provided!\n");
+        auto it = banned.find(args[1]);
+        if (it == banned.end()) fprintf(stderr, "Couldn't not find member\n");
+        banned.erase(it);
+        for (const auto &mem : banned) {
+            _json["banned-clients"][mem.first] = mem.second;
+
+        }
+        cfg.open(cfg_path, std::ios::out | std::ios::trunc);
+        cfg.write(_json.dump(4).c_str(), _json.dump(4).size());
+        cfg.flush();
+        cfg.close();
     }
     return 0;
 }
