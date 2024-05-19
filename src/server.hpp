@@ -157,7 +157,16 @@ void send_p(packet2 p, client cl)
 
 void *parse_command(const std::string command) {
     std::vector args = split(command);
-    if (args[0] == "kick") {
+    if      (args[0] == "help") {
+        printf("Help command...\n"\
+        "- kick <user> <reason> -> kicks user with reason\n"\
+        "- lsmem -> lists information about all connected members\n"\
+        "- ban <member> -> bans a member from the server\n"\
+        "- cfgrld -> reloads the config\n"\
+        "- unbab <member> -> unbans a member from the server\n"\
+        "[DEBUG ONLY] - CRASH -> crashes the server via segfault. (do not use)\n");
+    }
+    else if (args[0] == "kick") {
         packet2 p(packet_type::SERVER_CLIENT_KICK);
         if (args.size() < 2) {
             fprintf(stderr, "args[1]: empty\n");
@@ -219,6 +228,15 @@ void *parse_command(const std::string command) {
         cfg.write(_json.dump(4).c_str(), _json.dump(4).size());
         cfg.flush();
         cfg.close();
+    }
+    else if (args[0] == "CRASH") {
+        #ifdef DEBUG
+        WRITELOG(WARNING, "Controlled crash executed.");
+        char *p;
+        *p=1;
+        #else
+        printf("This command is only for debug mode\n");
+        #endif
     }
     return 0;
 }
@@ -523,7 +541,8 @@ void *handle_client(void *arg) {
 void segfault_handler(int signo) {
     // Print a message indicating the segmentation fault
     send_message((char*)"Server crashed!");
-    WRITELOG(ERROR, "Server received segmentation fault!");
+    WRITELOG(ERROR, "Server has crashed. Building it in debug mode and replacing the crash will help solving it.");
+    WRITELOG(ERROR, "Make an issue here: https://github.com/pizzuhh/pizzeria/issues/new");
     send_message("SERVER HAS CRASHED! PLEASE DISCONNECT!");
     // Continue with the default signal handler for SIGSEGV
     signal(SIGSEGV, SIG_DFL);
