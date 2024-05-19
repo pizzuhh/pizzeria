@@ -82,9 +82,12 @@ int main()
         perror("connect");
         term(true);
     }
+    packet2 tmp(packet_type::GENERIC);
+    send(client_socket, tmp.serialize(), PACKET_SIZE, 0);
     char *buffer = new char[PACKET_SIZE];
     recv(client_socket, buffer, PACKET_SIZE, 0);
     packet2 p = packet2::deserialize(buffer);
+    delete[] buffer;
     switch (p.type)
     {
     case packet_type::SERVER_CLIENT_KICK:
@@ -111,7 +114,7 @@ int main()
     size_t s;
     rsa_decrypt(b, 256, client_privatekey, &dec, &s);
     strncpy((char*)client_aes_key, (char*)dec, 32);
-
+    
     printf("Welcome to the chat room (%s:%d)\n", ip, port);
     delete[] username;
     connected = true;

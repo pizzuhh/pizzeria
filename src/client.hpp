@@ -68,6 +68,8 @@ void *rcv(void *arg) {
 }
 void send_message_private(std::string msg)
 {
+    if (msg.size() > sizeof(packet2::data))
+        fprintf(stderr, "This message exceed the limit! Will send only %ld of it.\n", sizeof(packet2::data));
     packet2 p(msg.c_str(), "", "", packet_type::PRIVATE_MESSAGE);
     char* out = p.serialize();
     //u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
@@ -81,6 +83,8 @@ void send_message_private(std::string msg)
     
 }
 void send_message (std::string msg) {
+    if (msg.size() > sizeof(packet2::data))
+        fprintf(stderr, "This message exceed the limit! Will send only %ld of it.\n", sizeof(packet2::data));
     packet2 p (msg.c_str(), "", "", packet_type::MESSAGE);
     char *data = p.serialize();
     int len;

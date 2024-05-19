@@ -359,17 +359,40 @@ void *handle_client(void *arg) {
     
     socklen_t cl_addr_len = sizeof(cl->addr);
     getpeername(cl->fd, (sockaddr*)&cl->addr, &cl_addr_len);
+    
+    // variables
     u_char *hashed_ip = new u_char[32];
     char *hashed_ip_hex = new char[65];
+    char buffer[PACKET_SIZE];
+    packet2 p;
+    char *m = nullptr;
+    char id_buff[1024];
+    char username_buffer[MAX_INPUT];
+    char clientPublicKey[1024];
+    unsigned char* encrypted_aes_key; 
+    size_t len;
+    EVP_PKEY *key = nullptr;
+
+    recv(cl->fd, buffer, PACKET_SIZE, 0);
+    packet2 tmp = packet2::deserialize(buffer);
+    switch (tmp.type)
+    {
+    case packet_type::PING:
+        send(cl->fd, "PONG", 5, 0);
+        goto cleanup;
+        break;
+    default:
+        break;
+    }
+    
     SHA256((u_char*)inet_ntoa(cl->addr.sin_addr), strlen(inet_ntoa(cl->addr.sin_addr)+1), hashed_ip);
     for (size_t i = 0; i < 32; i++)
     {
         snprintf(&hashed_ip_hex[i*2], 3, "%02X", hashed_ip[i]);
     }
-    //TODO: When ban is done check here for a match.
     delete[] hashed_ip;
     strncpy(cl->hashedIp, (char*)hashed_ip_hex, 32);
-    packet2 p;
+    
     for (auto &hash : banned) {
         if (hash.second == cl->hashedIp) {
             p = packet2(packet_type::SERVER_CLIENT_KICK);
@@ -380,16 +403,16 @@ void *handle_client(void *arg) {
         }
     }
     p = packet2(packet_type::GENERIC);
-    char *m = p.serialize();
+    m = p.serialize();
     send(cl->fd, m, PACKET_SIZE, 0);
 
     WRITELOG(INFO, format_string("Client's hashed ip: %s", hashed_ip_hex));
-    char id_buff[1024];
+    
     recv(cl->fd, id_buff, 1024, 0);
     WRITELOG(INFO, "Received client's ID");
     memcpy(cl->id, id_buff, 1024);
 
-    char username_buffer[MAX_INPUT];
+    
     recv(cl->fd, username_buffer, MAX_INPUT, 0);
     WRITELOG(INFO, "Received client ID");
     memcpy(cl->username, username_buffer, MAX_INPUT);
@@ -398,13 +421,12 @@ void *handle_client(void *arg) {
     WRITELOG(INFO, formatString("client %s: has connected with username: %s", cl->id, cl->username));
 
     // receive public key
-    char clientPublicKey[1024];
+    
     recv(cl->fd, clientPublicKey, 1024, 0);
     WRITELOG(INFO, "Received client public key");
-    EVP_PKEY *key = deserializeEVP_PKEY(clientPublicKey);
+    key = deserializeEVP_PKEY(clientPublicKey);
     
-    unsigned char* encrypted_aes_key; 
-    size_t len;
+    
     
     rsa_encrypt(server_aes_key, sizeof(server_aes_key), key, &encrypted_aes_key, &len);
     send(cl->fd, encrypted_aes_key, 256, 0);
@@ -487,6 +509,7 @@ void *handle_client(void *arg) {
             break;
         }
     }
+    cleanup:
     vector<client *>::iterator it = std::find(clients.begin(), clients.end(), cl);
     if (it != clients.end()) {
         clients.erase(it);
