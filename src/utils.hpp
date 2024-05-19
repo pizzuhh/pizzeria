@@ -70,68 +70,15 @@ int checkForUpdate() {
 
 
 #define MAX_LEN 1024
-struct packet
-{
-    char type[4];
-    char data[MAX_LEN];
-    packet(const char *type, const char *data)
-    {
-        strncpy(this->type, type, 3);
-        this->type[3] = '\0';
-        strncpy(this->data, data, MAX_LEN);
-    }
-    packet(const char *type)
-    {
-        if (type)
-        {
-            strncpy(this->type, type, 3);
-            this->type[3] = '\0';
-        }
-    }
-    packet(){}
-    /*packet to string*/
-    char* serialize()
-    {
-        char* buffer = new char[sizeof(packet) + sizeof("\xff")];
-        sprintf(buffer, "%s\xFF%s", this->type, this->data);
-        return buffer;
-    }
-    /*string to packet*/
-    void deserialize(const char* in)
-    {
-        // Find the position of the delimiter '\xff'
-        const char* delimiter = strchr(in, '\xff');
-    
-        // Ensure the delimiter is found and calculate the length
-        if (delimiter != nullptr)
-        {
-            size_t typeLength = delimiter - in;
-            size_t dataLength = strlen(delimiter + 1);
-    
-            // Copy type and data with appropriate lengths
-            strncpy(this->type, in, typeLength);
-            this->type[typeLength] = '\0'; // Null-terminate the type
-    
-            strncpy(this->data, delimiter + 1, dataLength);
-            this->data[dataLength] = '\0'; // Null-terminate the data
-        }
-        else
-        {
-            // Handle the case where the delimiter is not found or the format is invalid
-            // You may throw an exception, set default values, or handle it as appropriate for your application.
-            strncpy(type, in, 3);
-            fprintf(stderr, "Invalid input format in deserialize\n");
-        }
-    }
-};
 
-enum class packet_type : char {
+enum class packet_type : unsigned char {
         MESSAGE = 0,
         PRIVATE_MESSAGE = 1,
         CLIENT_CLOSE = 2,
         SERVER_CLIENT_KICK = 3,
         AUTH = 4,
-        GENERIC = 10
+        PING = 5,
+        GENERIC = 255,
 };
 #define PACKET_SIZE 1537
 #define PADDED_PACKET_SIZE 1552

@@ -276,7 +276,7 @@ void send_message(const char *msg) {
     delete[] out;
 }
 void fsend_message(const char *format, ...) {
-    char *out = new char[sizeof(packet)];
+    char *out = new char[1024*2];
     char *tmp = new char[MAX_LEN];
 
     va_list args;
@@ -321,6 +321,7 @@ void send_message(char* msg, char* sender, char* receiver) {
             unsigned char *encrypted = aes_encrypt((u_char*)data, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
             send(it->fd, encrypted, size, 0);
             delete[] out;
+            delete[] data;
             return;
         }
     }

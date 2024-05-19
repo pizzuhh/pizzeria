@@ -77,6 +77,7 @@ void send_message_private(std::string msg)
         perror("send");
         term(true);
     }
+    delete[] out;
     
 }
 void send_message (std::string msg) {
