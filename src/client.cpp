@@ -1,4 +1,3 @@
-#include  "helper.hpp"
 #include "client.hpp"
 //#include <libnotify/notify.h>
 /*Main function:
@@ -22,9 +21,6 @@ int main()
     }
     #endif
     //notify_init("pizzeria - client");
-    #ifndef CRYPTO
-    fprintf(stderr, "CLIENT IS RUNNING WITHOUT ENCRYPTION!\nTo connect with server(s) that use encryption, use client that supports it!\n");
-    #endif
     signal(SIGINT, (sighandler_t)cls);
     signal(SIGKILL, (sighandler_t)cls);
     signal(SIGTERM, (sighandler_t)cls);
@@ -56,11 +52,7 @@ int main()
         term(true);
 
     }
-    #ifdef CRYPTO
-    // generate public and private key
-    
     generateRsaKeys(&client_privatekey, &client_publickkey);
-    #endif
     
     
     // send server info
@@ -109,9 +101,6 @@ int main()
     // msleep(10); // if something brakes uncomment this
     send(client_socket, username, MAX_INPUT, 0);
     
-    #ifdef CRYPTO
-    // receive server's public key
-    
     char *buff;
     serializeEVP_PKEY(client_publickkey, &buff);
     send(client_socket, buff, 1024, 0);
@@ -123,7 +112,6 @@ int main()
     rsa_decrypt(b, 256, client_privatekey, &dec, &s);
     strncpy((char*)client_aes_key, (char*)dec, 32);
 
-    #endif
     printf("Welcome to the chat room (%s:%d)\n", ip, port);
     delete[] username;
     connected = true;

@@ -11,18 +11,13 @@ all: build
 
 build:
 	mkdir -p $(BUILD)
-	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client -DCRYPTO $(LDFLAGS) -lcrypto -s
-	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server -DCRYPTO $(LDFLAGS) -lcrypto -s
-
-build-no-encrypt:
-	mkdir -p $(BUILD)
-	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client $(LDFLAGS) -g -s
-	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server $(LDFLAGS) -g -s
+	$(CXX) $(CXXFLAGS) ./src/client.cpp -o $(BUILD)/client $(LDFLAGS) -lcrypto -s
+	$(CXX) $(CXXFLAGS) ./src/server.cpp -o $(BUILD)/server $(LDFLAGS) -lcrypto -s
 
 debug:
 	mkdir -p $(BUILD)
-	$(CXX) $(DBCXXFLAGS) ./src/client.cpp -o $(BUILD)/client-debug -DCRYPTO -DDEBUG $(LDFLAGS) -lcrypto -g
-	$(CXX) $(DBCXXFLAGS) ./src/server.cpp -o $(BUILD)/server-debug -DCRYPTO -DDEBUG $(LDFLAGS) -lcrypto -g
+	$(CXX) $(DBCXXFLAGS) ./src/client.cpp -o $(BUILD)/client-debug -DDEBUG $(LDFLAGS) -lcrypto -g
+	$(CXX) $(DBCXXFLAGS) ./src/server.cpp -o $(BUILD)/server-debug -DDEBUG $(LDFLAGS) -lcrypto -g
 
 clean:
 	rm -rf $(BUILD)/*

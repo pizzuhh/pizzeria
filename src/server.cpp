@@ -96,9 +96,6 @@ int main(int argc, char **argv)
                                                             (filter_mode == KICK_USER ? "KICK_USER" : 
                                                             filter_mode == BAN_USER ? "BAN_USER" : "UNDEFINED")));
     // warn if the server is not running with encryption
-    #ifndef CRYPTO
-    fprintf(stderr, "SERVER IS RUNNING WITHOUT ENCRYPTION!\nTO USE ENCRYPTION REBUILD THE SERVER AND THE CLIENT!\n");
-    #endif
     signal(SIGPIPE, (sighandler_t)broken_pipe);
     WRITELOG(INFO, "SIGPIPE -> broken_pipe()");
     signal(SIGINT, (sighandler_t)cls);
@@ -174,11 +171,9 @@ int main(int argc, char **argv)
     sockaddr cl_addr;
     int socklen = sizeof(cl_addr);
 
-    #ifdef CRYPTO
     // generate private-public key pair
     generate_key_iv(server_aes_key, server_aes_iv);
     WRITELOG(INFO, "[CRYPTO]: Generated key pairs");
-    #endif
     pthread_t adminClient;
     pthread_create(&adminClient, 0, server_client, 0);
     WRITELOG(INFO, "Created server client thread");
