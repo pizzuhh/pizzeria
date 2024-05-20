@@ -6,7 +6,7 @@ from the client code to keep it clean
 Also will be used for the GUI app
 */
 
-#include  "helper.hpp"
+#include  "utils.hpp"
 //#include <libnotify/notify.h>
 
 
@@ -14,11 +14,9 @@ bool running = true, connected = false;
 int client_socket = 0;
 pthread_t t_send, t_recv;
 
-#ifdef CRYPTO
 char pubkey[1024];
 u_char *publicKey, *privateKey;
 RSA* c2s_pubkey;
-#endif
 
 
 void term(bool ab = false, const char* message = "")
@@ -32,13 +30,9 @@ void term(bool ab = false, const char* message = "")
         running = false;
         packet2 p(packet_type::CLIENT_CLOSE);
         char* s = p.serialize();
-        #ifdef CRYPTO
         int size;
         u_char* enc = aes_encrypt((u_char*)s, PACKET_SIZE, client_aes_key, client_aes_iv, &size);
         send(client_socket, enc, size, 0);
-        #else 
-        send(client_socket, s, sizeof(packet), 0);
-        #endif
         // detach the threads
         pthread_cancel(t_recv);pthread_join(t_recv, 0); pthread_cancel(t_send);pthread_join(t_send, 0);
     }
@@ -51,7 +45,6 @@ void term(bool ab = false, const char* message = "")
 void *rcv(void *arg) {
     u_char *buff = new u_char[PADDED_PACKET_SIZE];
     while (running) {
-        #ifdef CRYPTO
         size_t bytes = recv(client_socket, buff, PADDED_PACKET_SIZE, 0);
         if (bytes <= 0) continue;
         int len;
@@ -68,7 +61,6 @@ void *rcv(void *arg) {
             printf("You have been kicked by server administrator.\nReason: %s\n", (strlen(p.data) > 0) ? p.data : "UNKOWN");
             term();
         }
-        #endif
         memset(buff, 0, PADDED_PACKET_SIZE);
     }
     delete[] buff;
@@ -76,7 +68,8 @@ void *rcv(void *arg) {
 }
 void send_message_private(std::string msg)
 {
-    #ifdef CRYPTO
+    if (msg.size() > sizeof(packet2::data))
+        fprintf(stderr, "This message exceed the limit! Will send only %ld of it.\n", sizeof(packet2::data));
     packet2 p(msg.c_str(), "", "", packet_type::PRIVATE_MESSAGE);
     char* out = p.serialize();
     //u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
@@ -86,20 +79,17 @@ void send_message_private(std::string msg)
         perror("send");
         term(true);
     }
-    #else
-    #endif
+    delete[] out;
     
 }
 void send_message (std::string msg) {
+    if (msg.size() > sizeof(packet2::data))
+        fprintf(stderr, "This message exceed the limit! Will send only %ld of it.\n", sizeof(packet2::data));
     packet2 p (msg.c_str(), "", "", packet_type::MESSAGE);
     char *data = p.serialize();
-    #ifdef CRYPTO
     int len;
     u_char *encrypted = aes_encrypt ((u_char*)data, 1537, client_aes_key, client_aes_iv, &len);
     send(client_socket, encrypted, len, 0);
-    #else
-    send(client_socket, data, PACKET_SIZE, 0); // TODO: Implement non decryption stuff
-    #endif
     delete[] data;
 }
 void *snd(void *arg)
