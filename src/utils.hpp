@@ -27,7 +27,7 @@
 #include "json.hpp"
 #include "config.h"
 #include "encryption.hpp"
-u_char server_aes_key[32], server_aes_iv[AES_BLOCK_SIZE], client_aes_key[32], client_aes_iv[AES_BLOCK_SIZE];
+
 
 
 

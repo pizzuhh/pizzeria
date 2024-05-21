@@ -1,19 +1,12 @@
 #pragma once
-/*
-This has the implementations of: term, rcv, snd and the other functions
-from the client code to keep it clean
-
-Also will be used for the GUI app
-*/
 
 #include  "utils.hpp"
 //#include <libnotify/notify.h>
-
+u_char client_aes_key[32], client_aes_iv[AES_BLOCK_SIZE];
 char* id;
 bool running = true, connected = false;
 int client_socket = 0;
 pthread_t t_send, t_recv;
-
 char pubkey[1024];
 u_char *publicKey, *privateKey;
 RSA* c2s_pubkey;

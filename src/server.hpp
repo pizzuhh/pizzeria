@@ -13,6 +13,7 @@ Also will be used for the GUI app
 #include <regex>
 #include <map>
 
+u_char server_aes_key[32], server_aes_iv[AES_BLOCK_SIZE];
 std::fstream cfg;
 json _json;
 std::map<std::string, std::string> banned;
@@ -420,6 +421,7 @@ void *handle_client(void *arg) {
     {
     case packet_type::PING:
         send(cl->fd, "PONG", 5, 0);
+        delete[] hashed_ip; // ! Check this if there's double free
         goto cleanup;
         break;
     default:
@@ -561,7 +563,7 @@ void *handle_client(void *arg) {
     if (it != clients.end()) {
         clients.erase(it);
         WRITELOG(INFO, "Erased client");
-
+        --current_clients;
     }
     delete cl;
     return 0;
