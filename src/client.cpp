@@ -1,10 +1,6 @@
 #include "client.hpp"
 //#include <libnotify/notify.h>
-/*Main function:
- * generates key pairs
- * connects to server
- * sends required data
- */
+
 
 void cls (int sig) {
     term();
@@ -45,7 +41,7 @@ int main()
     sockaddr_in server_addr = {0};
     server_addr.sin_port = htons(port);
     server_addr.sin_family = AF_INET;
-    //server_addr.sin_addr.s_addr = inet_addr(ip);
+
     if (inet_pton(AF_INET, toIPv4(ip), &server_addr.sin_addr.s_addr) <= 0)
     {
         perror("inet_pton");
@@ -55,9 +51,8 @@ int main()
     generateRsaKeys(&client_privatekey, &client_publickkey);
     
     
-    // send server info
     id = gen_priv_uuid();
-    //const char* uid   = gen_uid();
+
     char *username = new char[MAX_INPUT];
     while (1)
     {
@@ -99,18 +94,23 @@ int main()
     default:
         break;
     }
+
     send(client_socket, id, 1024, 0);
-    // msleep(10); // if something brakes uncomment this
     send(client_socket, username, MAX_INPUT, 0);
+
     delete[] username;
+
     char *buff;
     serializeEVP_PKEY(client_publickkey, &buff);
     send(client_socket, buff, 1024, 0);
+
     u_char b[256];
     recv(client_socket, &b, 256, 0);
     recv(client_socket, client_aes_iv, sizeof(client_aes_iv), 0);
+
     u_char *dec;
     size_t s;
+    
     rsa_decrypt(b, 256, client_privatekey, &dec, &s);
     strncpy((char*)client_aes_key, (char*)dec, 32);
     
