@@ -14,9 +14,9 @@ EQ            = =
 
 CC            = gcc
 CXX           = g++
-DEFINES       = -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
-CFLAGS        = -pipe -O2 -flto -fno-fat-lto-objects -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
-CXXFLAGS      = -pipe -O2 -std=gnu++11 -flto -fno-fat-lto-objects -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
+DEFINES       = -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
+CFLAGS        = -pipe -g -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
+CXXFLAGS      = -pipe -g -std=gnu++11 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
 INCPATH       = -I. -I. -I/usr/include/qt -I/usr/include/qt/QtWidgets -I/usr/include/qt/QtGui -I/usr/include/qt/QtCore -Ibuild/moc -Ibuild/ui -I/usr/lib/qt/mkspecs/linux-g++
 QMAKE         = /usr/bin/qmake
 DEL_FILE      = rm -f
@@ -39,9 +39,9 @@ COMPRESS      = gzip -9f
 DISTNAME      = pizzeria1.0.0
 DISTDIR = /home/pizza/projects/C++/pizzaria/build/obj/pizzeria1.0.0
 LINK          = g++
-LFLAGS        = -Wl,-O1 -pipe -O2 -std=gnu++11 -flto=4 -fno-fat-lto-objects -fuse-linker-plugin -fPIC
-LIBS          = $(SUBLIBS) /usr/lib/libQt5Widgets.so /usr/lib/libQt5Gui.so /usr/lib/libQt5Core.so -lGL -lpthread   
-AR            = gcc-ar cqs
+LFLAGS        = -fPIC
+LIBS          = $(SUBLIBS) -lcrypto -luuid -lcurl /usr/lib/libQt5Widgets.so /usr/lib/libQt5Gui.so /usr/lib/libQt5Core.so -lGL -lpthread   
+AR            = ar cqs
 RANLIB        = 
 SED           = sed
 STRIP         = strip
@@ -52,10 +52,14 @@ OBJECTS_DIR   = build/obj/
 
 ####### Files
 
-SOURCES       = src-ui/main.cpp \
-		src-ui/MainWindow.cpp build/moc/moc_MainWindow.cpp
-OBJECTS       = build/obj/main.o \
+SOURCES       = src-ui/dialogConnectLogic.cpp \
+		src-ui/main.cpp \
+		src-ui/MainWindow.cpp build/moc/moc_dialogConnectLogic.cpp \
+		build/moc/moc_MainWindow.cpp
+OBJECTS       = build/obj/dialogConnectLogic.o \
+		build/obj/main.o \
 		build/obj/MainWindow.o \
+		build/obj/moc_dialogConnectLogic.o \
 		build/obj/moc_MainWindow.o
 DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/common/unix.conf \
@@ -240,13 +244,13 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/features/default_pre.prf \
 		/usr/lib/qt/mkspecs/features/resolve_config.prf \
 		/usr/lib/qt/mkspecs/features/default_post.prf \
-		/usr/lib/qt/mkspecs/features/link_ltcg.prf \
 		/usr/lib/qt/mkspecs/features/ltcg.prf \
 		/usr/lib/qt/mkspecs/features/warn_on.prf \
 		/usr/lib/qt/mkspecs/features/qt.prf \
 		/usr/lib/qt/mkspecs/features/resources_functions.prf \
 		/usr/lib/qt/mkspecs/features/resources.prf \
 		/usr/lib/qt/mkspecs/features/moc.prf \
+		/usr/lib/qt/mkspecs/features/link_ltcg.prf \
 		/usr/lib/qt/mkspecs/features/unix/opengl.prf \
 		/usr/lib/qt/mkspecs/features/uic.prf \
 		/usr/lib/qt/mkspecs/features/unix/thread.prf \
@@ -256,8 +260,12 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/features/exceptions.prf \
 		/usr/lib/qt/mkspecs/features/yacc.prf \
 		/usr/lib/qt/mkspecs/features/lex.prf \
-		qmake.pro src-ui/MainWindow.hpp \
-		src-ui/window.hpp src-ui/main.cpp \
+		qmake.pro src-ui/dialogConnect.hpp \
+		src-ui/dialogConnectLogic.hpp \
+		src-ui/MainWindow.hpp \
+		src-ui/utils.hpp \
+		src-ui/window.hpp src-ui/dialogConnectLogic.cpp \
+		src-ui/main.cpp \
 		src-ui/MainWindow.cpp
 QMAKE_TARGET  = pizzeria
 DESTDIR       = build/
@@ -267,7 +275,7 @@ TARGET        = build/pizzeria
 first: all
 ####### Build rules
 
-build/pizzeria: build/ui/ui_MainWindow.h $(OBJECTS)  
+build/pizzeria: build/ui/ui_DialogConnect.h build/ui/ui_MainWindow.h $(OBJECTS)  
 	@test -d build/ || mkdir -p build/
 	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(OBJCOMP) $(LIBS)
 
@@ -454,13 +462,13 @@ Makefile: qmake.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib/qt/mkspecs
 		/usr/lib/qt/mkspecs/features/default_pre.prf \
 		/usr/lib/qt/mkspecs/features/resolve_config.prf \
 		/usr/lib/qt/mkspecs/features/default_post.prf \
-		/usr/lib/qt/mkspecs/features/link_ltcg.prf \
 		/usr/lib/qt/mkspecs/features/ltcg.prf \
 		/usr/lib/qt/mkspecs/features/warn_on.prf \
 		/usr/lib/qt/mkspecs/features/qt.prf \
 		/usr/lib/qt/mkspecs/features/resources_functions.prf \
 		/usr/lib/qt/mkspecs/features/resources.prf \
 		/usr/lib/qt/mkspecs/features/moc.prf \
+		/usr/lib/qt/mkspecs/features/link_ltcg.prf \
 		/usr/lib/qt/mkspecs/features/unix/opengl.prf \
 		/usr/lib/qt/mkspecs/features/uic.prf \
 		/usr/lib/qt/mkspecs/features/unix/thread.prf \
@@ -655,13 +663,13 @@ Makefile: qmake.pro /usr/lib/qt/mkspecs/linux-g++/qmake.conf /usr/lib/qt/mkspecs
 /usr/lib/qt/mkspecs/features/default_pre.prf:
 /usr/lib/qt/mkspecs/features/resolve_config.prf:
 /usr/lib/qt/mkspecs/features/default_post.prf:
-/usr/lib/qt/mkspecs/features/link_ltcg.prf:
 /usr/lib/qt/mkspecs/features/ltcg.prf:
 /usr/lib/qt/mkspecs/features/warn_on.prf:
 /usr/lib/qt/mkspecs/features/qt.prf:
 /usr/lib/qt/mkspecs/features/resources_functions.prf:
 /usr/lib/qt/mkspecs/features/resources.prf:
 /usr/lib/qt/mkspecs/features/moc.prf:
+/usr/lib/qt/mkspecs/features/link_ltcg.prf:
 /usr/lib/qt/mkspecs/features/unix/opengl.prf:
 /usr/lib/qt/mkspecs/features/uic.prf:
 /usr/lib/qt/mkspecs/features/unix/thread.prf:
@@ -687,9 +695,9 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/qt/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents src-ui/MainWindow.hpp src-ui/window.hpp $(DISTDIR)/
-	$(COPY_FILE) --parents src-ui/main.cpp src-ui/MainWindow.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents src-ui/MainWindow.ui $(DISTDIR)/
+	$(COPY_FILE) --parents src-ui/dialogConnect.hpp src-ui/dialogConnectLogic.hpp src-ui/MainWindow.hpp src-ui/utils.hpp src-ui/window.hpp $(DISTDIR)/
+	$(COPY_FILE) --parents src-ui/dialogConnectLogic.cpp src-ui/main.cpp src-ui/MainWindow.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents src-ui/DialogConnect.ui src-ui/MainWindow.ui $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -719,11 +727,17 @@ compiler_moc_predefs_make_all: build/moc/moc_predefs.h
 compiler_moc_predefs_clean:
 	-$(DEL_FILE) build/moc/moc_predefs.h
 build/moc/moc_predefs.h: /usr/lib/qt/mkspecs/features/data/dummy.cpp
-	g++ -pipe -O2 -std=gnu++11 -flto -fno-fat-lto-objects -Wall -Wextra -dM -E -o build/moc/moc_predefs.h /usr/lib/qt/mkspecs/features/data/dummy.cpp
+	g++ -pipe -g -std=gnu++11 -Wall -Wextra -dM -E -o build/moc/moc_predefs.h /usr/lib/qt/mkspecs/features/data/dummy.cpp
 
-compiler_moc_header_make_all: build/moc/moc_MainWindow.cpp
+compiler_moc_header_make_all: build/moc/moc_dialogConnectLogic.cpp build/moc/moc_MainWindow.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) build/moc/moc_MainWindow.cpp
+	-$(DEL_FILE) build/moc/moc_dialogConnectLogic.cpp build/moc/moc_MainWindow.cpp
+build/moc/moc_dialogConnectLogic.cpp: src-ui/dialogConnectLogic.hpp \
+		src-ui/dialogConnect.hpp \
+		build/moc/moc_predefs.h \
+		/usr/bin/moc
+	/usr/bin/moc $(DEFINES) --include /home/pizza/projects/C++/pizzaria/build/moc/moc_predefs.h -I/usr/lib/qt/mkspecs/linux-g++ -I/home/pizza/projects/C++/pizzaria -I/home/pizza/projects/C++/pizzaria -I/usr/include/qt -I/usr/include/qt/QtWidgets -I/usr/include/qt/QtGui -I/usr/include/qt/QtCore -I/usr/include/c++/14.1.1 -I/usr/include/c++/14.1.1/x86_64-pc-linux-gnu -I/usr/include/c++/14.1.1/backward -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.1.1/include -I/usr/local/include -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.1.1/include-fixed -I/usr/include src-ui/dialogConnectLogic.hpp -o build/moc/moc_dialogConnectLogic.cpp
+
 build/moc/moc_MainWindow.cpp: src-ui/MainWindow.hpp \
 		src-ui/window.hpp \
 		build/moc/moc_predefs.h \
@@ -734,9 +748,13 @@ compiler_moc_objc_header_make_all:
 compiler_moc_objc_header_clean:
 compiler_moc_source_make_all:
 compiler_moc_source_clean:
-compiler_uic_make_all: build/ui/ui_MainWindow.h
+compiler_uic_make_all: build/ui/ui_DialogConnect.h build/ui/ui_MainWindow.h
 compiler_uic_clean:
-	-$(DEL_FILE) build/ui/ui_MainWindow.h
+	-$(DEL_FILE) build/ui/ui_DialogConnect.h build/ui/ui_MainWindow.h
+build/ui/ui_DialogConnect.h: src-ui/DialogConnect.ui \
+		/usr/bin/uic
+	/usr/bin/uic src-ui/DialogConnect.ui -o build/ui/ui_DialogConnect.h
+
 build/ui/ui_MainWindow.h: src-ui/MainWindow.ui \
 		/usr/bin/uic
 	/usr/bin/uic src-ui/MainWindow.ui -o build/ui/ui_MainWindow.h
@@ -751,13 +769,29 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean compiler_ui
 
 ####### Compile
 
+build/obj/dialogConnectLogic.o: src-ui/dialogConnectLogic.cpp src-ui/dialogConnectLogic.hpp \
+		src-ui/dialogConnect.hpp \
+		src-ui/utils.hpp \
+		src/client.hpp \
+		src/utils.hpp \
+		src/genuuid.hpp \
+		src/json.hpp \
+		src/config.h \
+		src/encryption.hpp
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/dialogConnectLogic.o src-ui/dialogConnectLogic.cpp
+
 build/obj/main.o: src-ui/main.cpp src-ui/MainWindow.hpp \
 		src-ui/window.hpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/main.o src-ui/main.cpp
 
 build/obj/MainWindow.o: src-ui/MainWindow.cpp src-ui/MainWindow.hpp \
-		src-ui/window.hpp
+		src-ui/window.hpp \
+		src-ui/dialogConnectLogic.hpp \
+		src-ui/dialogConnect.hpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/MainWindow.o src-ui/MainWindow.cpp
+
+build/obj/moc_dialogConnectLogic.o: build/moc/moc_dialogConnectLogic.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/moc_dialogConnectLogic.o build/moc/moc_dialogConnectLogic.cpp
 
 build/obj/moc_MainWindow.o: build/moc/moc_MainWindow.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/moc_MainWindow.o build/moc/moc_MainWindow.cpp
