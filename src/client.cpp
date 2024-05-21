@@ -103,14 +103,14 @@ int main()
     char *buff;
     serializeEVP_PKEY(client_publickkey, &buff);
     send(client_socket, buff, 1024, 0);
-
+    free(buff);
     u_char b[256];
     recv(client_socket, &b, 256, 0);
     recv(client_socket, client_aes_iv, sizeof(client_aes_iv), 0);
 
     u_char *dec;
     size_t s;
-    
+
     rsa_decrypt(b, 256, client_privatekey, &dec, &s);
     strncpy((char*)client_aes_key, (char*)dec, 32);
     

@@ -421,7 +421,8 @@ void *handle_client(void *arg) {
     {
     case packet_type::PING:
         send(cl->fd, "PONG", 5, 0);
-        delete[] hashed_ip; // ! Check this if there's double free
+        delete[] hashed_ip; hashed_ip=nullptr;// ! Check this if there's double free
+        delete[] hashed_ip_hex; hashed_ip_hex=nullptr;// ! Check this if there's double free
         goto cleanup;
         break;
     default:
@@ -433,8 +434,11 @@ void *handle_client(void *arg) {
     {
         snprintf(&hashed_ip_hex[i*2], 3, "%02X", hashed_ip[i]);
     }
-    delete[] hashed_ip;
+    
+    
     strncpy(cl->hashedIp, (char*)hashed_ip_hex, 32);
+    delete[] hashed_ip_hex; hashed_ip_hex=nullptr;
+    delete[] hashed_ip; hashed_ip=nullptr;
     if (++current_clients > max_clients) {
         p = packet2("Server is full!", "", "", packet_type::SERVER_CLIENT_KICK);
         m = p.serialize();
@@ -455,7 +459,7 @@ void *handle_client(void *arg) {
     }
     send(cl->fd, m, PACKET_SIZE, 0);
 
-    WRITELOG(INFO, format_string("Client's hashed ip: %s", hashed_ip_hex));
+    WRITELOG(INFO, format_string("Client's hashed ip: %s", cl->hashedIp));
     
     recv(cl->fd, id_buff, 1024, 0);
     WRITELOG(INFO, "Received client's ID");
