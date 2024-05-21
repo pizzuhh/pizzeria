@@ -30,6 +30,7 @@ public:
     QAction *actionQuit;
     QAction *actionConnect;
     QAction *actionStart_server;
+    QAction *actionAbout;
     QWidget *centralwidget;
     QPlainTextEdit *plainTextEdit;
     QPushButton *pushButton;
@@ -39,6 +40,7 @@ public:
     QMenu *menuFile;
     QMenu *menuClient;
     QMenu *menuServer;
+    QMenu *menuHelp;
     QStatusBar *statusbar;
 
     void setupUi(QMainWindow *MainWindow)
@@ -53,6 +55,8 @@ public:
         actionConnect->setIconVisibleInMenu(false);
         actionStart_server = new QAction(MainWindow);
         actionStart_server->setObjectName(QString::fromUtf8("actionStart_server"));
+        actionAbout = new QAction(MainWindow);
+        actionAbout->setObjectName(QString::fromUtf8("actionAbout"));
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
         plainTextEdit = new QPlainTextEdit(centralwidget);
@@ -78,6 +82,8 @@ public:
         menuClient->setObjectName(QString::fromUtf8("menuClient"));
         menuServer = new QMenu(menubar);
         menuServer->setObjectName(QString::fromUtf8("menuServer"));
+        menuHelp = new QMenu(menubar);
+        menuHelp->setObjectName(QString::fromUtf8("menuHelp"));
         MainWindow->setMenuBar(menubar);
         statusbar = new QStatusBar(MainWindow);
         statusbar->setObjectName(QString::fromUtf8("statusbar"));
@@ -86,9 +92,11 @@ public:
         menubar->addAction(menuFile->menuAction());
         menubar->addAction(menuClient->menuAction());
         menubar->addAction(menuServer->menuAction());
+        menubar->addAction(menuHelp->menuAction());
         menuFile->addAction(actionQuit);
         menuClient->addAction(actionConnect);
         menuServer->addAction(actionStart_server);
+        menuHelp->addAction(actionAbout);
 
         retranslateUi(MainWindow);
 
@@ -104,11 +112,13 @@ public:
         actionConnect->setToolTip(QCoreApplication::translate("MainWindow", "Connect to server", nullptr));
 #endif // QT_CONFIG(tooltip)
         actionStart_server->setText(QCoreApplication::translate("MainWindow", "Start server", nullptr));
+        actionAbout->setText(QCoreApplication::translate("MainWindow", "About", nullptr));
         pushButton->setText(QCoreApplication::translate("MainWindow", "Send Message", nullptr));
         lineEdit->setPlaceholderText(QCoreApplication::translate("MainWindow", "Message", nullptr));
         menuFile->setTitle(QCoreApplication::translate("MainWindow", "File", nullptr));
         menuClient->setTitle(QCoreApplication::translate("MainWindow", "Client", nullptr));
         menuServer->setTitle(QCoreApplication::translate("MainWindow", "Server", nullptr));
+        menuHelp->setTitle(QCoreApplication::translate("MainWindow", "Help", nullptr));
     } // retranslateUi
 
 };

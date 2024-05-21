@@ -52,13 +52,17 @@ OBJECTS_DIR   = build/obj/
 
 ####### Files
 
-SOURCES       = src-ui/dialogConnectLogic.cpp \
+SOURCES       = src-ui/DialogAboutLogic.cpp \
+		src-ui/dialogConnectLogic.cpp \
 		src-ui/main.cpp \
-		src-ui/MainWindow.cpp build/moc/moc_dialogConnectLogic.cpp \
+		src-ui/MainWindow.cpp build/moc/moc_DialogAboutLogic.cpp \
+		build/moc/moc_dialogConnectLogic.cpp \
 		build/moc/moc_MainWindow.cpp
-OBJECTS       = build/obj/dialogConnectLogic.o \
+OBJECTS       = build/obj/DialogAboutLogic.o \
+		build/obj/dialogConnectLogic.o \
 		build/obj/main.o \
 		build/obj/MainWindow.o \
+		build/obj/moc_DialogAboutLogic.o \
 		build/obj/moc_dialogConnectLogic.o \
 		build/obj/moc_MainWindow.o
 DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
@@ -260,11 +264,14 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/features/exceptions.prf \
 		/usr/lib/qt/mkspecs/features/yacc.prf \
 		/usr/lib/qt/mkspecs/features/lex.prf \
-		qmake.pro src-ui/dialogConnect.hpp \
+		qmake.pro src-ui/DialogAbout.hpp \
+		src-ui/DialogAboutLogic.hpp \
+		src-ui/dialogConnect.hpp \
 		src-ui/dialogConnectLogic.hpp \
 		src-ui/MainWindow.hpp \
 		src-ui/utils.hpp \
-		src-ui/window.hpp src-ui/dialogConnectLogic.cpp \
+		src-ui/window.hpp src-ui/DialogAboutLogic.cpp \
+		src-ui/dialogConnectLogic.cpp \
 		src-ui/main.cpp \
 		src-ui/MainWindow.cpp
 QMAKE_TARGET  = pizzeria
@@ -275,7 +282,7 @@ TARGET        = build/pizzeria
 first: all
 ####### Build rules
 
-build/pizzeria: build/ui/ui_DialogConnect.h build/ui/ui_MainWindow.h $(OBJECTS)  
+build/pizzeria: build/ui/ui_DialogAbout.h build/ui/ui_DialogConnect.h build/ui/ui_MainWindow.h $(OBJECTS)  
 	@test -d build/ || mkdir -p build/
 	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(OBJCOMP) $(LIBS)
 
@@ -695,9 +702,9 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/qt/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents src-ui/dialogConnect.hpp src-ui/dialogConnectLogic.hpp src-ui/MainWindow.hpp src-ui/utils.hpp src-ui/window.hpp $(DISTDIR)/
-	$(COPY_FILE) --parents src-ui/dialogConnectLogic.cpp src-ui/main.cpp src-ui/MainWindow.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents src-ui/DialogConnect.ui src-ui/MainWindow.ui $(DISTDIR)/
+	$(COPY_FILE) --parents src-ui/DialogAbout.hpp src-ui/DialogAboutLogic.hpp src-ui/dialogConnect.hpp src-ui/dialogConnectLogic.hpp src-ui/MainWindow.hpp src-ui/utils.hpp src-ui/window.hpp $(DISTDIR)/
+	$(COPY_FILE) --parents src-ui/DialogAboutLogic.cpp src-ui/dialogConnectLogic.cpp src-ui/main.cpp src-ui/MainWindow.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents src-ui/DialogAbout.ui src-ui/DialogConnect.ui src-ui/MainWindow.ui $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -729,9 +736,15 @@ compiler_moc_predefs_clean:
 build/moc/moc_predefs.h: /usr/lib/qt/mkspecs/features/data/dummy.cpp
 	g++ -pipe -g -std=gnu++11 -Wall -Wextra -dM -E -o build/moc/moc_predefs.h /usr/lib/qt/mkspecs/features/data/dummy.cpp
 
-compiler_moc_header_make_all: build/moc/moc_dialogConnectLogic.cpp build/moc/moc_MainWindow.cpp
+compiler_moc_header_make_all: build/moc/moc_DialogAboutLogic.cpp build/moc/moc_dialogConnectLogic.cpp build/moc/moc_MainWindow.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) build/moc/moc_dialogConnectLogic.cpp build/moc/moc_MainWindow.cpp
+	-$(DEL_FILE) build/moc/moc_DialogAboutLogic.cpp build/moc/moc_dialogConnectLogic.cpp build/moc/moc_MainWindow.cpp
+build/moc/moc_DialogAboutLogic.cpp: src-ui/DialogAboutLogic.hpp \
+		src-ui/DialogAbout.hpp \
+		build/moc/moc_predefs.h \
+		/usr/bin/moc
+	/usr/bin/moc $(DEFINES) --include /home/pizza/projects/C++/pizzaria/build/moc/moc_predefs.h -I/usr/lib/qt/mkspecs/linux-g++ -I/home/pizza/projects/C++/pizzaria -I/home/pizza/projects/C++/pizzaria -I/usr/include/qt -I/usr/include/qt/QtWidgets -I/usr/include/qt/QtGui -I/usr/include/qt/QtCore -I/usr/include/c++/14.1.1 -I/usr/include/c++/14.1.1/x86_64-pc-linux-gnu -I/usr/include/c++/14.1.1/backward -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.1.1/include -I/usr/local/include -I/usr/lib/gcc/x86_64-pc-linux-gnu/14.1.1/include-fixed -I/usr/include src-ui/DialogAboutLogic.hpp -o build/moc/moc_DialogAboutLogic.cpp
+
 build/moc/moc_dialogConnectLogic.cpp: src-ui/dialogConnectLogic.hpp \
 		src-ui/dialogConnect.hpp \
 		build/moc/moc_predefs.h \
@@ -748,9 +761,13 @@ compiler_moc_objc_header_make_all:
 compiler_moc_objc_header_clean:
 compiler_moc_source_make_all:
 compiler_moc_source_clean:
-compiler_uic_make_all: build/ui/ui_DialogConnect.h build/ui/ui_MainWindow.h
+compiler_uic_make_all: build/ui/ui_DialogAbout.h build/ui/ui_DialogConnect.h build/ui/ui_MainWindow.h
 compiler_uic_clean:
-	-$(DEL_FILE) build/ui/ui_DialogConnect.h build/ui/ui_MainWindow.h
+	-$(DEL_FILE) build/ui/ui_DialogAbout.h build/ui/ui_DialogConnect.h build/ui/ui_MainWindow.h
+build/ui/ui_DialogAbout.h: src-ui/DialogAbout.ui \
+		/usr/bin/uic
+	/usr/bin/uic src-ui/DialogAbout.ui -o build/ui/ui_DialogAbout.h
+
 build/ui/ui_DialogConnect.h: src-ui/DialogConnect.ui \
 		/usr/bin/uic
 	/usr/bin/uic src-ui/DialogConnect.ui -o build/ui/ui_DialogConnect.h
@@ -768,6 +785,10 @@ compiler_lex_clean:
 compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean compiler_uic_clean 
 
 ####### Compile
+
+build/obj/DialogAboutLogic.o: src-ui/DialogAboutLogic.cpp src-ui/DialogAboutLogic.hpp \
+		src-ui/DialogAbout.hpp
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/DialogAboutLogic.o src-ui/DialogAboutLogic.cpp
 
 build/obj/dialogConnectLogic.o: src-ui/dialogConnectLogic.cpp src-ui/dialogConnectLogic.hpp \
 		src-ui/dialogConnect.hpp \
@@ -789,6 +810,9 @@ build/obj/MainWindow.o: src-ui/MainWindow.cpp src-ui/MainWindow.hpp \
 		src-ui/dialogConnectLogic.hpp \
 		src-ui/dialogConnect.hpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/MainWindow.o src-ui/MainWindow.cpp
+
+build/obj/moc_DialogAboutLogic.o: build/moc/moc_DialogAboutLogic.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/moc_DialogAboutLogic.o build/moc/moc_DialogAboutLogic.cpp
 
 build/obj/moc_dialogConnectLogic.o: build/moc/moc_dialogConnectLogic.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/moc_dialogConnectLogic.o build/moc/moc_dialogConnectLogic.cpp

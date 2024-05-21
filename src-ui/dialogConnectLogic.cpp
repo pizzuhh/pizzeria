@@ -4,7 +4,7 @@
 #include <QMessageBox>
 #include <errno.h>
 
-DialogConnect::DialogConnect(QWidget *parrent) : QDialog(parrent), ui(new Ui::Dialog) {
+DialogConnect::DialogConnect(QWidget *parrent) : QDialog(parrent), ui(new Ui::Connect) {
     ui->setupUi(this);
     connect(ui->PingServer, &QPushButton::clicked, this, &DialogConnect::btnPing);
     

@@ -17,7 +17,7 @@
 
 QT_BEGIN_NAMESPACE
 
-class Ui_Dialog
+class Ui_Connect
 {
 public:
     QLineEdit *ServerIpInput;
@@ -25,42 +25,42 @@ public:
     QPushButton *PingServer;
     QPushButton *ConnectServer;
 
-    void setupUi(QDialog *Dialog)
+    void setupUi(QDialog *Connect)
     {
-        if (Dialog->objectName().isEmpty())
-            Dialog->setObjectName(QString::fromUtf8("Dialog"));
-        Dialog->resize(370, 203);
-        ServerIpInput = new QLineEdit(Dialog);
+        if (Connect->objectName().isEmpty())
+            Connect->setObjectName(QString::fromUtf8("Connect"));
+        Connect->resize(370, 203);
+        ServerIpInput = new QLineEdit(Connect);
         ServerIpInput->setObjectName(QString::fromUtf8("ServerIpInput"));
         ServerIpInput->setGeometry(QRect(30, 40, 191, 36));
-        ServerPortInput = new QLineEdit(Dialog);
+        ServerPortInput = new QLineEdit(Connect);
         ServerPortInput->setObjectName(QString::fromUtf8("ServerPortInput"));
         ServerPortInput->setGeometry(QRect(30, 90, 191, 36));
-        PingServer = new QPushButton(Dialog);
+        PingServer = new QPushButton(Connect);
         PingServer->setObjectName(QString::fromUtf8("PingServer"));
         PingServer->setGeometry(QRect(140, 140, 91, 41));
-        ConnectServer = new QPushButton(Dialog);
+        ConnectServer = new QPushButton(Connect);
         ConnectServer->setObjectName(QString::fromUtf8("ConnectServer"));
         ConnectServer->setGeometry(QRect(250, 140, 91, 41));
 
-        retranslateUi(Dialog);
+        retranslateUi(Connect);
 
-        QMetaObject::connectSlotsByName(Dialog);
+        QMetaObject::connectSlotsByName(Connect);
     } // setupUi
 
-    void retranslateUi(QDialog *Dialog)
+    void retranslateUi(QDialog *Connect)
     {
-        Dialog->setWindowTitle(QCoreApplication::translate("Dialog", "Dialog", nullptr));
-        ServerIpInput->setPlaceholderText(QCoreApplication::translate("Dialog", "Server IP", nullptr));
-        ServerPortInput->setPlaceholderText(QCoreApplication::translate("Dialog", "Server Port", nullptr));
-        PingServer->setText(QCoreApplication::translate("Dialog", "Ping", nullptr));
-        ConnectServer->setText(QCoreApplication::translate("Dialog", "Connect", nullptr));
+        Connect->setWindowTitle(QCoreApplication::translate("Connect", "Connect", nullptr));
+        ServerIpInput->setPlaceholderText(QCoreApplication::translate("Connect", "Server IP", nullptr));
+        ServerPortInput->setPlaceholderText(QCoreApplication::translate("Connect", "Server Port", nullptr));
+        PingServer->setText(QCoreApplication::translate("Connect", "Ping", nullptr));
+        ConnectServer->setText(QCoreApplication::translate("Connect", "Connect", nullptr));
     } // retranslateUi
 
 };
 
 namespace Ui {
-    class Dialog: public Ui_Dialog {};
+    class Connect: public Ui_Connect {};
 } // namespace Ui
 
 QT_END_NAMESPACE

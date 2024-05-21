@@ -2,6 +2,7 @@
 
 
 int Ping(const char *ip, const int port) {
+    if (port < 0 || port > 65535 ) errno = EINVAL; return 0;
     if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         perror("socket");
