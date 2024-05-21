@@ -808,7 +808,9 @@ build/obj/main.o: src-ui/main.cpp src-ui/MainWindow.hpp \
 build/obj/MainWindow.o: src-ui/MainWindow.cpp src-ui/MainWindow.hpp \
 		src-ui/window.hpp \
 		src-ui/dialogConnectLogic.hpp \
-		src-ui/dialogConnect.hpp
+		src-ui/dialogConnect.hpp \
+		src-ui/DialogAboutLogic.hpp \
+		src-ui/DialogAbout.hpp
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/MainWindow.o src-ui/MainWindow.cpp
 
 build/obj/moc_DialogAboutLogic.o: build/moc/moc_DialogAboutLogic.cpp 
