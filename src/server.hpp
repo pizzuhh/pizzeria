@@ -21,6 +21,8 @@ std::string words;
 bool filter_on;
 uint8_t filter_mode;
 char *cfg_path;
+unsigned long max_clients = 50; // default value
+unsigned long current_clients = 0;
 
 enum filter_mode_enum {
     DO_NOT_SEND_MESSAGE = 0,
@@ -69,6 +71,8 @@ struct client
 vector<client *> clients;
 Logger *logger = nullptr;
 void ban (client &cl);
+void send_p(packet2 p, client cl);
+void send_p(packet2 p);
 
 int load_config() {
     cfg.open(cfg_path, std::ios::app | std::ios::in | std::ios::out);
@@ -79,6 +83,7 @@ int load_config() {
     _json = json::parse(cfg_data);
     filter_on       = _json["filter"]["enabled"];
     filter_mode     = _json["filter"]["mode"];
+    max_clients     = _json["max-clients"];
     words.clear();
     if (_json["filter"]["filter"].is_array()) {
         for (const auto &item : _json["filter"]["filter"]) {
@@ -98,6 +103,9 @@ int load_config() {
         }
     }
     WRITELOG(INFO, "Loaded/Reloaded config!");
+    #ifdef DEBUG
+    printf("filter-status: %d\nfilter-mode: %d\nmax-clients: %d\n", filter_on, filter_mode, max_clients);
+    #endif
     return 1;
 }
 
@@ -123,15 +131,17 @@ void broken_pipe()
 
 void cls(int c)
 {
-    send_message("Server has stopped");
-    send_message("Do not send messages to this server");
+    /* send_message("Server has stopped");
+    send_message("Do not send messages to this server"); */
+    packet2 p("Server has stopped.", "SERVER", "", packet_type::DROP_CONNECTION);
+    send_p(p);
     for (client* cl: clients)
     {
         delete cl;
     }
     WRITELOG(WARNING, "Server exited");
     delete logger;
-    printf("exited...\nyou can now press enter");
+    printf("exited...\n");
     exit(0);
 }
 
@@ -146,14 +156,26 @@ void help(void)
 void send_p(packet2 p, client cl)
 {
     char* s = p.serialize();
-    //u_char *data = Encrypt((const u_char*)buff, cl.publicKey);
+
     int size;
     unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
-    //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
+
     send(cl.fd, encrypted, size, 0);
     delete[] s;
 }
 
+void send_p(packet2 p)
+{
+    char* s = p.serialize();
+
+    int size;
+    unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
+
+    for (client *cl : clients) {
+        send(cl->fd, encrypted, size, 0);
+    }
+    delete[] s;
+}
 
 void *parse_command(const std::string command) {
     std::vector args = split(command);
@@ -262,14 +284,14 @@ void *server_client(void *arg)
     return nullptr;
 }
 
-void send_message(char *msg, char *sender)
+void send_message(char *msg, const client *sender)
 {
     char *out = new char[PACKET_SIZE];
-    sprintf(out, "<%s>: %s", sender, msg);
-    packet2 p(out, sender, "", packet_type::MESSAGE);
+    sprintf(out, "<%s>: %s", sender->username, msg);
+    packet2 p(out, sender->id, "", packet_type::MESSAGE);
     char* s = p.serialize();
     for (const auto &client : clients) {
-        if (strcmp(client->username, sender)) {
+        if (strcmp(client->username, sender->username)) {
             int size;
             unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
             send(client->fd, encrypted, size, 0);
@@ -316,7 +338,7 @@ void fsend_message(const char *format, ...) {
     delete[] out;  
     delete[] tmp;
 }
-void send_message(const char *msg, const client *target) {
+void send_target_message(const char *msg, const client *target) {
     char *out = new char[KiB(4)];
     sprintf(out, "%s: %s", "[SERVER]", msg);
     packet2 p(out, "the higher-ups", "", packet_type::MESSAGE);
@@ -348,7 +370,7 @@ void send_message(char* msg, char* sender, char* receiver) {
     });
     client *cl = *it;
     if (it != clients.end())
-        send_message("User does not exist!", cl);
+        send_target_message("User does not exist!", cl);
 }
 
 bool filterMessage(const std::string &message) {
@@ -373,8 +395,9 @@ void ban (client &cl) {
 }
 
 void *handle_client(void *arg) {
-    client *cl = (client *)arg;
     
+    client *cl = (client *)arg;
+
     socklen_t cl_addr_len = sizeof(cl->addr);
     getpeername(cl->fd, (sockaddr*)&cl->addr, &cl_addr_len);
     
@@ -410,18 +433,24 @@ void *handle_client(void *arg) {
     }
     delete[] hashed_ip;
     strncpy(cl->hashedIp, (char*)hashed_ip_hex, 32);
-    
-    for (auto &hash : banned) {
-        if (hash.second == cl->hashedIp) {
-            p = packet2(packet_type::SERVER_CLIENT_KICK);
-            cl->valid = false;
-            char *m = p.serialize();
-            send(cl->fd, m, PACKET_SIZE, 0);
-            return nullptr;
+    if (++current_clients > max_clients) {
+        p = packet2("Server is full!", "", "", packet_type::SERVER_CLIENT_KICK);
+        m = p.serialize();
+        send(cl->fd, m, PACKET_SIZE, 0);
+        goto cleanup;
+    } else {
+        for (auto &hash : banned) {
+            if (hash.second == cl->hashedIp) {
+                p = packet2("You are not permited to access this server.", "", "",packet_type::SERVER_CLIENT_KICK);
+                cl->valid = false;
+                char *m = p.serialize();
+                send(cl->fd, m, PACKET_SIZE, 0);
+                goto cleanup;
+            }
         }
+        p = packet2(packet_type::GENERIC);
+        m = p.serialize();
     }
-    p = packet2(packet_type::GENERIC);
-    m = p.serialize();
     send(cl->fd, m, PACKET_SIZE, 0);
 
     WRITELOG(INFO, format_string("Client's hashed ip: %s", hashed_ip_hex));
@@ -468,7 +497,7 @@ void *handle_client(void *arg) {
             if (filter_on) {
                 if (!filterMessage(p.data)) {
                     printf("<%s>: %s\n", cl->username, p.data);
-                    send_message((char *)p.data, cl->username);
+                    send_message((char *)p.data, cl);
                     WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
                 } else {
                     packet2 p_mod;
@@ -476,12 +505,12 @@ void *handle_client(void *arg) {
                         case DO_NOT_SEND_MESSAGE:
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
                             WRITELOG(INFO, formatString("(%s: %s) Has been flagged by the filter!", cl->username, p.data));
-                            send_message("Your message has been flagged by the filter!", cl);
+                            send_target_message("Your message has been flagged by the filter!", cl);
                             break;
                         case KICK_USER:
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
                             WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and kicked) by the filter!", cl->username, p.data));
-                            send_message("Your message has been flagged by the filter!", cl);
+                            send_target_message("Your message has been flagged by the filter!", cl);
                             p_mod = packet2("Kicked by filter.", "", "", packet_type::SERVER_CLIENT_KICK);
                             send_p(p_mod, *cl);
                             break;
@@ -489,21 +518,21 @@ void *handle_client(void *arg) {
                         case BAN_USER: 
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
                             WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and banned) by the filter!", cl->username, p.data));
-                            send_message("Your message has been flagged by the filter!", cl);
+                            send_target_message("Your message has been flagged by the filter!", cl);
                             p_mod = packet2("Kicked by filter.", "", "", packet_type::SERVER_CLIENT_KICK);
                             send_p(p_mod, *cl);
                             break;
                         default:
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
                             WRITELOG(INFO, formatString("(%s: %s) Has been flagged by the filter!", cl->username, p.data));
-                            send_message("Your message has been flagged by the filter!", cl);
+                            send_target_message("Your message has been flagged by the filter!", cl);
                             break;
                     }
                 }
             } else {
                 WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
                 printf("<%s>: %s\n", cl->username, p.data);
-                send_message(p.data, cl->username);
+                send_message(p.data, cl);
             }
         }
         else if (p.type == packet_type::PRIVATE_MESSAGE) {
@@ -512,7 +541,7 @@ void *handle_client(void *arg) {
             char msg[sizeof(p.data)]; // Adjust the size as needed
             size_t pos = pm.find(' ');
             if (pos == std::string::npos) {
-                send_message("Error while sending message!", cl); 
+                send_target_message("Error while sending message!", cl); 
                 continue;
             }
             strncpy(target, pm.substr(0, pos).c_str(), sizeof(p.receiver)-1);

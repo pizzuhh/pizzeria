@@ -56,7 +56,7 @@ int main()
     
     
     // send server info
-    const char* id    = gen_priv_uuid();
+    id = gen_priv_uuid();
     //const char* uid   = gen_uid();
     char *username = new char[MAX_INPUT];
     while (1)
@@ -91,7 +91,7 @@ int main()
     switch (p.type)
     {
     case packet_type::SERVER_CLIENT_KICK:
-        printf("You have been kicked!\n");
+        printf("You have been kicked!\nReason: %s\n", (strlen(p.data) > 0) ? p.data : "None");
         term();
         break;
     case packet_type::GENERIC:
@@ -100,10 +100,9 @@ int main()
         break;
     }
     send(client_socket, id, 1024, 0);
-    delete[] id;
     // msleep(10); // if something brakes uncomment this
     send(client_socket, username, MAX_INPUT, 0);
-    
+    delete[] username;
     char *buff;
     serializeEVP_PKEY(client_publickkey, &buff);
     send(client_socket, buff, 1024, 0);
@@ -116,7 +115,6 @@ int main()
     strncpy((char*)client_aes_key, (char*)dec, 32);
     
     printf("Welcome to the chat room (%s:%d)\n", ip, port);
-    delete[] username;
     connected = true;
     pthread_create(&t_recv, 0, rcv, 0);
     pthread_create(&t_send, 0, snd, 0);

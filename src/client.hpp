@@ -9,7 +9,7 @@ Also will be used for the GUI app
 #include  "utils.hpp"
 //#include <libnotify/notify.h>
 
-
+char* id;
 bool running = true, connected = false;
 int client_socket = 0;
 pthread_t t_send, t_recv;
@@ -52,13 +52,15 @@ void *rcv(void *arg) {
         packet2 p = packet2::deserialize((char*)dec);
         
         if (p.type == packet_type::MESSAGE) {
+            //TODO: Implement a way to block users.
             printf("%s\n", p.data);
-        }
-        if (p.type == packet_type::PRIVATE_MESSAGE) {
+        } else if (p.type == packet_type::PRIVATE_MESSAGE) {
             printf("[<%s> -> <%s>]: %s\n", p.sender, p.receiver, p.data);
-        }
-        if (p.type == packet_type::SERVER_CLIENT_KICK) {
+        } else if (p.type == packet_type::SERVER_CLIENT_KICK) {
             printf("You have been kicked by server administrator.\nReason: %s\n", (strlen(p.data) > 0) ? p.data : "UNKOWN");
+            term();
+        } else if (p.type == packet_type::DROP_CONNECTION) {
+            printf("[%s]: %s\n\n", p.sender, p.data);
             term();
         }
         memset(buff, 0, PADDED_PACKET_SIZE);
@@ -82,10 +84,10 @@ void send_message_private(std::string msg)
     delete[] out;
     
 }
-void send_message (std::string msg) {
+void send_message(std::string msg) {
     if (msg.size() > sizeof(packet2::data))
         fprintf(stderr, "This message exceed the limit! Will send only %ld of it.\n", sizeof(packet2::data));
-    packet2 p (msg.c_str(), "", "", packet_type::MESSAGE);
+    packet2 p(msg.c_str(), id, "", packet_type::MESSAGE);
     char *data = p.serialize();
     int len;
     u_char *encrypted = aes_encrypt ((u_char*)data, 1537, client_aes_key, client_aes_iv, &len);

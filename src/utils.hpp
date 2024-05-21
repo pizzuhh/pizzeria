@@ -70,7 +70,10 @@ int checkForUpdate() {
 
 
 #define MAX_LEN 1024
-
+/*
+* Note all of these packets are reserved. You may change their name but not their value
+* You can add other types without removing/modifying existing ones
+*/ 
 enum class packet_type : unsigned char {
         MESSAGE = 0,
         PRIVATE_MESSAGE = 1,
@@ -78,6 +81,7 @@ enum class packet_type : unsigned char {
         SERVER_CLIENT_KICK = 3,
         AUTH = 4,
         PING = 5,
+        DROP_CONNECTION = 6,
         GENERIC = 255,
 };
 #define PACKET_SIZE 1537

@@ -5,3 +5,4 @@
 *.log
 src/server-cfg.json
 .qmake*
+server-cfg-symlink.json
