@@ -1,7 +1,8 @@
 {
     "admins": [],
-    "banned-clients": [
-    ],
+    "banned-clients": [],
+    "max-clients": 50,
+    "welcome-msg":"",
     "filter": {
         "enabled": false,
         "filter": [],

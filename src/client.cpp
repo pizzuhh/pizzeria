@@ -113,8 +113,14 @@ int main()
 
     rsa_decrypt(b, 256, client_privatekey, &dec, &s);
     strncpy((char*)client_aes_key, (char*)dec, 32);
-    
-    printf("Welcome to the chat room (%s:%d)\n", ip, port);
+    free(dec);
+
+    char *p_welcome_buff = new char[PACKET_SIZE];
+    recv(client_socket, p_welcome_buff, PACKET_SIZE, 0);
+    packet2 p_welcome = packet2::deserialize(p_welcome_buff);
+    delete[] p_welcome_buff;
+    printf("%s\n", (p_welcome.type == packet_type::MESSAGE) ? p_welcome.data :
+                    "Welcome to the server!");
     connected = true;
     pthread_create(&t_recv, 0, rcv, 0);
     pthread_create(&t_send, 0, snd, 0);

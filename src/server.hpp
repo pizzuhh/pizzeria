@@ -14,6 +14,7 @@ Also will be used for the GUI app
 #include <map>
 
 u_char server_aes_key[32], server_aes_iv[AES_BLOCK_SIZE];
+// config
 std::fstream cfg;
 json _json;
 std::map<std::string, std::string> banned;
@@ -23,6 +24,8 @@ bool filter_on;
 uint8_t filter_mode;
 char *cfg_path;
 unsigned long max_clients = 50; // default value
+std::string welcome_msg;
+
 unsigned long current_clients = 0;
 
 enum filter_mode_enum {
@@ -101,6 +104,14 @@ int load_config() {
                     banned[i.key()] = i.value().get<std::string>();
                 }
             }
+        }
+    }
+    if (_json["welcome-msg"].is_string()) {
+        welcome_msg = _json["welcome-msg"];
+        if (welcome_msg.length() > MAX_LEN) {
+            fprintf(stderr, "welcome_msg > %d\nConsider using a shorter message!\nOnly 1024 bytes will be send",
+             MAX_LEN);
+             WRITELOG(WARNING, "welcome_msg exceeded maximum length");
         }
     }
     WRITELOG(INFO, "Loaded/Reloaded config!");
@@ -305,7 +316,7 @@ void send_message(char *msg, const client *sender)
 void send_message(const char *msg) {
     char *out = new char[snprintf(nullptr, 0, "%s: %s", "[SERVER]", msg)+1];
     sprintf(out, "%s: %s", "[SERVER]", msg);
-    packet2 p(out, "the higher-ups", "", packet_type::MESSAGE);
+    packet2 p(out, "[SERVER]", "", packet_type::MESSAGE);
     char* s = p.serialize();
      int size;
     unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
@@ -327,7 +338,7 @@ void fsend_message(const char *format, ...) {
 
     va_end(args);
     sprintf(out, "[SERVER]: %s", tmp);
-    packet2 p(out, "the higher-ups", "", packet_type::MESSAGE);
+    packet2 p(out, "[SERVER]", "", packet_type::MESSAGE);
     char *s = p.serialize();
     for (const auto &client : clients) {
         int size;
@@ -342,7 +353,7 @@ void fsend_message(const char *format, ...) {
 void send_target_message(const char *msg, const client *target) {
     char *out = new char[KiB(4)];
     sprintf(out, "%s: %s", "[SERVER]", msg);
-    packet2 p(out, "the higher-ups", "", packet_type::MESSAGE);
+    packet2 p(out, "[SERVER]", "", packet_type::MESSAGE);
     char* s = p.serialize();  
     //unsigned char *encrypted = Encrypt((const unsigned char *)s, target->publicKey);
     int size;
@@ -417,6 +428,7 @@ void *handle_client(void *arg) {
 
     recv(cl->fd, buffer, PACKET_SIZE, 0);
     packet2 tmp = packet2::deserialize(buffer);
+    packet2 p_welcome;
     switch (tmp.type)
     {
     case packet_type::PING:
@@ -486,8 +498,9 @@ void *handle_client(void *arg) {
     send(cl->fd, server_aes_iv, sizeof(server_aes_iv), 0);
     WRITELOG(INFO, "Sending aes key and iv");
     clients.push_back(cl);
-    // send_message("test", cl->username, cl->username);
-    
+    p_welcome = packet2((welcome_msg.length() > 0) ? welcome_msg.c_str() : "", "",
+                      "", (welcome_msg.length() > 0) ? packet_type::MESSAGE : packet_type::GENERIC);
+    send(cl->fd, p_welcome.serialize(), PACKET_SIZE, 0);
     while (cl->valid) {
         packet2 p;
         u_char *data = new u_char[1552];
