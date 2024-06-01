@@ -38,8 +38,8 @@ enum filter_mode_enum {
 int load_config();
 void *handle_client(void *arg);
 void *server_client(void *arg);
-void send_message(char *msg, char *sender);
-void send_message(const char *msg);
+void sendMessage(char *msg, char *sender);
+void sendMessage(const char *msg);
 void fsend_message(char *fmt, ...);
 
 // https://files.pizzuhh.dev/pizLogger.hpp
@@ -143,8 +143,8 @@ void broken_pipe()
 
 void cls(int c)
 {
-    /* send_message("Server has stopped");
-    send_message("Do not send messages to this server"); */
+    /* sendMessage("Server has stopped");
+    sendMessage("Do not send messages to this server"); */
     packet2 p("Server has stopped.", "SERVER", "", packet_type::DROP_CONNECTION);
     send_p(p);
     for (client* cl: clients)
@@ -170,7 +170,7 @@ void send_p(packet2 p, client cl)
     char* s = p.serialize();
 
     int size;
-    unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
+    unsigned char *encrypted = AESEncrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
 
     send(cl.fd, encrypted, size, 0);
     delete[] s;
@@ -181,7 +181,7 @@ void send_p(packet2 p)
     char* s = p.serialize();
 
     int size;
-    unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
+    unsigned char *encrypted = AESEncrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
 
     for (client *cl : clients) {
         send(cl->fd, encrypted, size, 0);
@@ -288,7 +288,7 @@ void *server_client(void *arg)
         if (buff.substr(0, 2) == "#!") {
             parse_command(buff.substr(2));
         } else {
-            send_message(const_cast<char *>(buff.c_str()));
+            sendMessage(const_cast<char *>(buff.c_str()));
         }
         
     }
@@ -296,7 +296,7 @@ void *server_client(void *arg)
     return nullptr;
 }
 
-void send_message(char *msg, const client *sender)
+void sendMessage(char *msg, const client *sender)
 {
     char *out = new char[PACKET_SIZE];
     sprintf(out, "<%s>: %s", sender->username, msg);
@@ -305,7 +305,7 @@ void send_message(char *msg, const client *sender)
     for (const auto &client : clients) {
         if (strcmp(client->username, sender->username)) {
             int size;
-            unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
+            unsigned char *encrypted = AESEncrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
             send(client->fd, encrypted, size, 0);
             WRITELOG(INFO, "Message sent");
         }
@@ -313,13 +313,13 @@ void send_message(char *msg, const client *sender)
     delete[] s;
     delete[] out;
 }
-void send_message(const char *msg) {
+void sendMessage(const char *msg) {
     char *out = new char[snprintf(nullptr, 0, "%s: %s", "[SERVER]", msg)+1];
     sprintf(out, "%s: %s", "[SERVER]", msg);
     packet2 p(out, "[SERVER]", "", packet_type::MESSAGE);
     char* s = p.serialize();
      int size;
-    unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
+    unsigned char *encrypted = AESEncrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
     for (const auto &client : clients) {   
         send(client->fd, encrypted, size, 0);
         WRITELOG(INFO, "Message sent");
@@ -342,7 +342,7 @@ void fsend_message(const char *format, ...) {
     char *s = p.serialize();
     for (const auto &client : clients) {
         int size;
-        unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
+        unsigned char *encrypted = AESEncrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
         send(client->fd, encrypted, size, 0);
         WRITELOG(INFO, "Message sent");
     }
@@ -357,20 +357,20 @@ void send_target_message(const char *msg, const client *target) {
     char* s = p.serialize();  
     //unsigned char *encrypted = Encrypt((const unsigned char *)s, target->publicKey);
     int size;
-    unsigned char *encrypted = aes_encrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
+    unsigned char *encrypted = AESEncrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
     //unsigned char *encrypted = Encrypt((const unsigned char *)s, client->publicKey);
     send(target->fd, encrypted, size, 0);
     delete[] s;
     delete[] out;
 }
-void send_message(char* msg, char* sender, char* receiver) {
+void sendMessage(char* msg, char* sender, char* receiver) {
     for (auto &it : clients) {
         if (!strcmp(receiver, it->username)) {
             char *out = new char[PACKET_SIZE];
             packet2 p(msg, receiver, sender, packet_type::PRIVATE_MESSAGE);
             char *data = p.serialize();
             int size;
-            unsigned char *encrypted = aes_encrypt((u_char*)data, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
+            unsigned char *encrypted = AESEncrypt((u_char*)data, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
             send(it->fd, encrypted, size, 0);
             delete[] out;
             delete[] data;
@@ -493,7 +493,7 @@ void *handle_client(void *arg) {
     
     
     
-    rsa_encrypt(server_aes_key, sizeof(server_aes_key), key, &encrypted_aes_key, &len);
+    RSAEncrypt(server_aes_key, sizeof(server_aes_key), key, &encrypted_aes_key, &len);
     send(cl->fd, encrypted_aes_key, 256, 0);
     send(cl->fd, server_aes_iv, sizeof(server_aes_iv), 0);
     WRITELOG(INFO, "Sending aes key and iv");
@@ -510,13 +510,13 @@ void *handle_client(void *arg) {
             return 0;
         
         int size;
-        unsigned char* d = aes_decrypt(data, 1552, server_aes_key, server_aes_iv, &size);
+        unsigned char* d = AESDecrypt(data, 1552, server_aes_key, server_aes_iv, &size);
         p = packet2::deserialize((char*)d);
         if (p.type == packet_type::MESSAGE) {
             if (filter_on) {
                 if (!filterMessage(p.data)) {
                     printf("<%s>: %s\n", cl->username, p.data);
-                    send_message((char *)p.data, cl);
+                    sendMessage((char *)p.data, cl);
                     WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
                 } else {
                     packet2 p_mod;
@@ -551,7 +551,7 @@ void *handle_client(void *arg) {
             } else {
                 WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
                 printf("<%s>: %s\n", cl->username, p.data);
-                send_message(p.data, cl);
+                sendMessage(p.data, cl);
             }
         }
         else if (p.type == packet_type::PRIVATE_MESSAGE) {
@@ -567,11 +567,11 @@ void *handle_client(void *arg) {
             target[sizeof(target) - 1] = '\0'; 
             strncpy(msg, pm.substr(pos + 1).c_str(), sizeof(p.data)-1);
             msg[sizeof(msg) - 1] = '\0'; 
-            send_message(msg, cl->username, target);
+            sendMessage(msg, cl->username, target);
         }
         else if (p.type == packet_type::CLIENT_CLOSE) {
             printf("%s has disconnected\n", cl->username);
-            send_message(format_string("%s: has disconnected", cl->username));
+            sendMessage(format_string("%s: has disconnected", cl->username));
             break;
         }
     }
@@ -588,10 +588,10 @@ void *handle_client(void *arg) {
 
 void segfault_handler(int signo) {
     // Print a message indicating the segmentation fault
-    send_message((char*)"Server crashed!");
+    sendMessage((char*)"Server crashed!");
     WRITELOG(ERROR, "Server has crashed. Building it in debug mode and replacing the crash will help solving it.");
     WRITELOG(ERROR, "Make an issue here: https://github.com/pizzuhh/pizzeria/issues/new");
-    send_message("SERVER HAS CRASHED! PLEASE DISCONNECT!");
+    sendMessage("SERVER HAS CRASHED! PLEASE DISCONNECT!");
     // Continue with the default signal handler for SIGSEGV
     signal(SIGSEGV, SIG_DFL);
     raise(SIGSEGV);

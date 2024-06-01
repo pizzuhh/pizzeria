@@ -173,7 +173,7 @@ int main(int argc, char **argv)
     int socklen = sizeof(cl_addr);
 
     // generate private-public key pair
-    generate_key_iv(server_aes_key, server_aes_iv);
+    generateAESKeys(server_aes_key, server_aes_iv);
     WRITELOG(INFO, "[CRYPTO]: Generated key pairs");
     pthread_t adminClient;
     pthread_create(&adminClient, 0, server_client, 0);

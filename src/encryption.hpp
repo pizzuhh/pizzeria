@@ -4,7 +4,7 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
-void print_error_and_abort(void) {
+void printAndAbort(void) {
     char err_msg[256];
     ERR_error_string_n(ERR_get_error(), err_msg, 256);
     fprintf(stderr, "%s\n", err_msg);
@@ -30,7 +30,7 @@ int generateRsaKeys(EVP_PKEY **rsa_privKey, EVP_PKEY **rsa_pubKey) {
     return 1;
 }
 
-int rsa_encrypt(u_char *plaintext, size_t plaintext_len, EVP_PKEY *publicKey, unsigned char **encrypted, size_t *encrypted_len) {
+int RSAEncrypt(u_char *plaintext, size_t plaintext_len, EVP_PKEY *publicKey, unsigned char **encrypted, size_t *encrypted_len) {
     EVP_PKEY_CTX *ctx;
     size_t outlen;
 
@@ -59,7 +59,7 @@ int rsa_encrypt(u_char *plaintext, size_t plaintext_len, EVP_PKEY *publicKey, un
     return 1; // Success
 }
 
-int rsa_decrypt(unsigned char *encrypted, size_t encrypted_len, EVP_PKEY *privateKey, unsigned char **decrypted, size_t *decrypted_len) {
+int RSADecrypt(unsigned char *encrypted, size_t encrypted_len, EVP_PKEY *privateKey, unsigned char **decrypted, size_t *decrypted_len) {
     EVP_PKEY_CTX *ctx;
     size_t outlen;
 
@@ -135,7 +135,7 @@ EVP_PKEY *deserializeEVP_PKEY(const char *buffer) {
 
 
 
-int generate_key_iv(unsigned char *key, unsigned char *iv) {
+int generateAESKeys(unsigned char *key, unsigned char *iv) {
     if (!RAND_bytes(key, 32) || !RAND_bytes(iv, AES_BLOCK_SIZE)) {
         fprintf(stderr, "Failed to generate key and IV.\n");
         return -1;
@@ -143,7 +143,7 @@ int generate_key_iv(unsigned char *key, unsigned char *iv) {
     return 0;
 }
 
-unsigned char *aes_encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, int *ciphertext_len) {
+unsigned char *AESEncrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, int *ciphertext_len) {
     EVP_CIPHER_CTX *ctx;
     int len;
 
@@ -170,7 +170,7 @@ unsigned char *aes_encrypt(unsigned char *plaintext, int plaintext_len, unsigned
     return ciphertext;
 }
 
-unsigned char *aes_decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, int *plaintext_len) {
+unsigned char *AESDecrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, int *plaintext_len) {
     EVP_CIPHER_CTX *ctx;
     int len;
     unsigned char *plaintext = new u_char[ciphertext_len]; // ciphertext length is maximum possible size of plaintext
@@ -198,7 +198,7 @@ unsigned char *aes_decrypt(unsigned char *ciphertext, int ciphertext_len, unsign
 /*
 * returns the total size after the data is padded
 */
-int calc_padding (int init_legnth) {
+int calcPadding (int init_legnth) {
     int mod = init_legnth % AES_BLOCK_SIZE;
     return init_legnth + (AES_BLOCK_SIZE - mod);
 }

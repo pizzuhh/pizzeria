@@ -14,17 +14,12 @@ RSA* c2s_pubkey;
 
 void term(bool ab = false, const char* message = "")
 {
-    /* running = false;
-    send(client_socket, "#!CLOSE", 7, 0);
-    close(client_socket);
-    pthread_detach(t_recv); pthread_detach(t_send);
-    exit(0); */
     if (connected) {
         running = false;
         packet2 p(packet_type::CLIENT_CLOSE);
         char* s = p.serialize();
         int size;
-        u_char* enc = aes_encrypt((u_char*)s, PACKET_SIZE, client_aes_key, client_aes_iv, &size);
+        u_char* enc = AESEncrypt((u_char*)s, PACKET_SIZE, client_aes_key, client_aes_iv, &size);
         send(client_socket, enc, size, 0);
         // detach the threads
         pthread_cancel(t_recv);pthread_join(t_recv, 0); pthread_cancel(t_send);pthread_join(t_send, 0);
@@ -41,7 +36,7 @@ void *rcv(void *arg) {
         size_t bytes = recv(client_socket, buff, PADDED_PACKET_SIZE, 0);
         if (bytes <= 0) continue;
         int len;
-        u_char *dec = aes_decrypt(buff, PADDED_PACKET_SIZE, client_aes_key, client_aes_iv, &len); 
+        u_char *dec = AESDecrypt(buff, PADDED_PACKET_SIZE, client_aes_key, client_aes_iv, &len); 
         packet2 p = packet2::deserialize((char*)dec);
         
         if (p.type == packet_type::MESSAGE) {
@@ -61,7 +56,7 @@ void *rcv(void *arg) {
     delete[] buff;
     return nullptr;
 }
-void send_message_private(std::string msg)
+void sendPrivateMessage(std::string msg)
 {
     if (msg.size() > sizeof(packet2::data))
         fprintf(stderr, "This message exceed the limit! Will send only %ld of it.\n", sizeof(packet2::data));
@@ -69,7 +64,7 @@ void send_message_private(std::string msg)
     char* out = p.serialize();
     //u_char* buffer = Encrypt((const unsigned char*)out, c2s_pubkey);
     int size;
-    u_char* buffer = aes_encrypt((u_char*)out, PACKET_SIZE, client_aes_key, client_aes_iv, &size);
+    u_char* buffer = AESEncrypt((u_char*)out, PACKET_SIZE, client_aes_key, client_aes_iv, &size);
     if (send(client_socket, buffer, size, 0) == -1) {
         perror("send");
         term(true);
@@ -77,13 +72,13 @@ void send_message_private(std::string msg)
     delete[] out;
     
 }
-void send_message(std::string msg) {
+void sendMessage(std::string msg) {
     if (msg.size() > sizeof(packet2::data))
         fprintf(stderr, "This message exceed the limit! Will send only %ld of it.\n", sizeof(packet2::data));
     packet2 p(msg.c_str(), id, "", packet_type::MESSAGE);
     char *data = p.serialize();
     int len;
-    u_char *encrypted = aes_encrypt ((u_char*)data, 1537, client_aes_key, client_aes_iv, &len);
+    u_char *encrypted = AESEncrypt ((u_char*)data, 1537, client_aes_key, client_aes_iv, &len);
     send(client_socket, encrypted, len, 0);
     delete[] data;
 }
@@ -99,12 +94,12 @@ void *snd(void *arg)
             fprintf(stderr, "Do not send empty messages!\n");
             continue;
         }
-        if (msg.substr(0, 2) != "#!") send_message(msg);
+        if (msg.substr(0, 2) != "#!") sendMessage(msg);
         else {
             msg.erase(0, 2);
             if (msg.substr(0, 2) == "pm") {
                 msg.erase(0, 3);
-                send_message_private(msg);
+                sendPrivateMessage(msg);
             }
         }
     }
