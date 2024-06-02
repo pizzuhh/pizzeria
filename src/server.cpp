@@ -35,6 +35,7 @@ int main(int argc, char **argv)
     cfg_path = getcfgpath();
     #ifdef DEBUG
     printf("%s\n", cfg_path);
+    is_debug_enabled = 1;
     #endif
     struct option opt[] = {
         {"log", optional_argument, 0, 'l'},
@@ -68,11 +69,20 @@ int main(int argc, char **argv)
             break;
         }
     }
-    if (logging) {
+    if (logging || is_debug_enabled == 1) {
+        if (logFile == nullptr) {
+            time_t raw;
+            struct tm *timeinfo;
+            time(&raw);
+            timeinfo = localtime(&raw);
+            char time_str[1024];
+            strftime(time_str, sizeof(time_str), "pizzeria-server-%Y-%m-%dT%H:%M:%S.log", timeinfo);
+            logFile = time_str;
+        }
         logger = new Logger(logFile);
     }
+    if (is_debug_enabled == 1) WRITELOG(WARNING, "Logger forced by debug mode!");
     WRITELOG(INFO, "Reading config file.");
-
     int loaded = load_config();
     if (!loaded) {
         cfg.open(cfg_path, std::ios::app | std::ios::in | std::ios::out);

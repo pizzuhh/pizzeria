@@ -25,6 +25,7 @@ uint8_t filter_mode;
 char *cfg_path;
 unsigned long max_clients = 50; // default value
 std::string welcome_msg;
+uint8_t is_debug_enabled = 0;
 
 unsigned long current_clients = 0;
 
@@ -44,17 +45,17 @@ void fsend_message(char *fmt, ...);
 
 // https://files.pizzuhh.dev/pizLogger.hpp
 #include "pizLogger.hpp"
-#define WRITELOG(type, msg) logging == true ? logger->writelog<type, 0, 0>(msg) : (void)0
+#define WRITELOG(type, msg) (logging == true || is_debug_enabled == 1) ? logger->writelog<type, 0, 0>(msg) : (void)0
 
 
-#define LOGERROR() logging == true ? logger->logError() : (void)0
+#define LOGERROR() (logging == true || is_debug_enabled == 1) ? logger->logError() : (void)0
 
-#define CLOSELOGGER() logging == true ? logger->CloseLogger() : (void)0
+#define CLOSELOGGER() (logging == true || is_debug_enabled == 1) ? logger->CloseLogger() : (void)0
 
-#define DELETELOG() logging == true ? logger->DelteLog() : (void)0
+#define DELETELOG() (logging == true || is_debug_enabled == 1) ? logger->DelteLog() : (void)0
 
 bool defaultPort = false, logging = false;
-char *logFile;
+char *logFile = nullptr;
 
 using std::vector;
 // sleep for miliseconds
@@ -116,7 +117,7 @@ int load_config() {
     }
     WRITELOG(INFO, "Loaded/Reloaded config!");
     #ifdef DEBUG
-    printf("filter-status: %d\nfilter-mode: %d\nmax-clients: %d\n", filter_on, filter_mode, max_clients);
+    printf("filter-status: %d\nfilter-mode: %d\nmax-clients: %ld\n", filter_on, filter_mode, max_clients);
     #endif
     return 1;
 }
@@ -207,8 +208,7 @@ void *parse_command(const std::string command) {
         }
         if (args.size() >= 3) {
             std::string d;
-            for (size_t i = 2; i < args.size(); i++)
-            {
+            for (size_t i = 2; i < args.size(); i++) {
                 
                 d.append(args[i] + ' ');
                 
@@ -216,9 +216,15 @@ void *parse_command(const std::string command) {
             strncpy(p.data, d.c_str(), 1024);
         }
         const char *target = args[1].c_str();
+        if (!strcmp(target, "*")) {
+            for (client *c : clients) {
+                WRITELOG(INFO, formatString("Kicked %s, reason: %s", c->username, p.data));
+                send_p(p, *c);
+            }
+        }
         for (client *c : clients) {
             if (!strcmp(c->username, target)) {
-                WRITELOG(INFO, formatString("Kicked %s, reason: %s", target, p.data));
+                WRITELOG(INFO, formatString("Kicked %s, reason: %s", c->username, p.data));
                 send_p(p, *c);
             }
         }
@@ -266,7 +272,7 @@ void *parse_command(const std::string command) {
     else if (args[0] == "CRASH") {
         #ifdef DEBUG
         WRITELOG(WARNING, "Controlled crash executed.");
-        char *p;
+        char *p = nullptr;
         *p=1;
         #else
         printf("This command is only for debug mode\n");
@@ -517,33 +523,51 @@ void *handle_client(void *arg) {
                 if (!filterMessage(p.data)) {
                     printf("<%s>: %s\n", cl->username, p.data);
                     sendMessage((char *)p.data, cl);
+                    #ifdef LOG_MESSAGES
                     WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
+                    #endif
+                    
                 } else {
                     packet2 p_mod;
                     switch (filter_mode) {
                         case DO_NOT_SEND_MESSAGE:
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
-                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged by the filter!", cl->username, p.data));
+                            #ifdef LOG_MESSAGES
+                            WRITELOG(INFO, formatString("flagged: %s: %s", cl->username, p.data));
+                            #elif
+                            WRITELOG(WARNING, "Message filter has been triggered! Message logging is disabled! Recompile with \"LOG_MESSAGES\" defined to log the messages!")
+                            #endif
                             send_target_message("Your message has been flagged by the filter!", cl);
                             break;
                         case KICK_USER:
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
-                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and kicked) by the filter!", cl->username, p.data));
+                            #ifdef LOG_MESSAGES
+                            WRITELOG(INFO, formatString("flagged: %s: %s", cl->username, p.data));
+                            #elif
+                            WRITELOG(WARNING, "Message filter has been triggered! Message logging is disabled! Recompile with \"LOG_MESSAGES\" defined to log the messages!")
+                            #endif
                             send_target_message("Your message has been flagged by the filter!", cl);
                             p_mod = packet2("Kicked by filter.", "", "", packet_type::SERVER_CLIENT_KICK);
                             send_p(p_mod, *cl);
                             break;
-                        // TODO(5): Implement the ban logic. For now kick the user
                         case BAN_USER: 
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
-                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged (and banned) by the filter!", cl->username, p.data));
+                            #ifdef LOG_MESSAGES
+                            WRITELOG(INFO, formatString("flagged: %s: %s", cl->username, p.data));
+                            #elif
+                            WRITELOG(WARNING, "Message filter has been triggered! Message logging is disabled! Recompile with \"LOG_MESSAGES\" defined to log the messages!")
+                            #endif
                             send_target_message("Your message has been flagged by the filter!", cl);
                             p_mod = packet2("Kicked by filter.", "", "", packet_type::SERVER_CLIENT_KICK);
                             send_p(p_mod, *cl);
                             break;
                         default:
                             printf("!FILTERED <%s>: %s\n", cl->username, p.data);
-                            WRITELOG(INFO, formatString("(%s: %s) Has been flagged by the filter!", cl->username, p.data));
+                            #ifdef LOG_MESSAGES
+                            WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
+                            #elif
+                            WRITELOG(WARNING, "Message filter has been triggered! Message logging is disabled! Recompile with \"LOG_MESSAGES\" defined to log the messages!")
+                            #endif
                             send_target_message("Your message has been flagged by the filter!", cl);
                             break;
                     }
