@@ -59,10 +59,13 @@ int main()
         printf("Enter username: ");
         fflush(stdout);
 
-        fgets(username, MAX_INPUT, stdin);
+        if (fgets(username, MAX_INPUT, stdin) == NULL) {
+            fprintf(stderr, "Either EOF or error ocurred!\nTerminating..."); 
+            exit(1);
+        }
         size_t len = strlen(username);
         username[len-1] = '\0';
-        if (len == 0 || iswhitespace(username))
+        if (len == 0 || iswhitespace(username) || !strcmp(username, "*"))
             fprintf(stderr, "Invalid username please try again!\n");
         else
         {
