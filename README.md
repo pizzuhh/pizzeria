@@ -46,12 +46,11 @@ After that you need to create 3 threads:
 2. sender (send messages to the server)
 3. heartbeat (every second send `HRT` packet to the server)
 
-# 3.4.1
+# 3.4.3
 ## Changes
-### Server configuration
-(More details [here](https://github.com/pizzuhh/pizzeria/wiki/Server-configuration))
-### Other
-- Added more commands. Check the [commands page](https://github.com/pizzuhh/pizzeria/wiki/Commands) in the wiki for more information about them.
+1. `#!kick * <reason>` - will kick everyone connected to the server.
+2. Clients can't name themselves '*'. 
+3. Maybe some more changes that I forgot xD
 
 # Docker image for the server
 If you want to run the server using docker:
