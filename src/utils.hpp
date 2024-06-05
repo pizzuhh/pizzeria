@@ -84,15 +84,15 @@ enum class packet_type : unsigned char {
         DROP_CONNECTION = 6,
         GENERIC = 255,
 };
-#define PACKET_SIZE 1537
-#define PADDED_PACKET_SIZE 1552
+
 
 struct packet2 {
-     
+    time_t timestamp;
     packet_type type;
     char sender[MAX_INPUT+1];
     char receiver[MAX_INPUT+1];
     char data[MAX_LEN];
+    
     packet2 (const char *data, const char *sender, const char *receiver, packet_type type) {
         this->type = type;
         strncpy(this->data,     data,       sizeof(this->data)-1);
@@ -104,18 +104,23 @@ struct packet2 {
     }
     packet2 (){}
     char* serialize() {
-        size_t size = sizeof(this->type) + sizeof(this->receiver) + sizeof(this->sender) + sizeof(this->data);
+        size_t size = sizeof(this->type) + sizeof(this->receiver) + sizeof(this->sender) + sizeof(this->data) + sizeof(packet2::timestamp);
         char* ret = new char[size];
+        this->timestamp = htonl(this->timestamp);
         memcpy(ret, this, size);
         return ret;
     }
     static packet2 deserialize(char* data) {
-        size_t size = sizeof(packet2::type) + sizeof(packet2::receiver) + sizeof(packet2::sender) + sizeof(packet2::data);
+        size_t size = sizeof(packet2::type) + sizeof(packet2::receiver) + sizeof(packet2::sender) + sizeof(packet2::data) + sizeof(packet2::timestamp);
         packet2 packet;
         memcpy(&packet, data, size);
+        packet.timestamp = ntohl(packet.timestamp);
         return packet;
     }
 };
+
+#define PACKET_SIZE 1552
+#define PADDED_PACKET_SIZE 1568
 
 bool isIp(const char* x)
 {

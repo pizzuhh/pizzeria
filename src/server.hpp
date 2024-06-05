@@ -323,8 +323,9 @@ void sendMessage(const char *msg) {
     char *out = new char[snprintf(nullptr, 0, "%s: %s", "[SERVER]", msg)+1];
     sprintf(out, "%s: %s", "[SERVER]", msg);
     packet2 p(out, "[SERVER]", "", packet_type::MESSAGE);
+    p.timestamp = time(0);
     char* s = p.serialize();
-     int size;
+    int size;
     unsigned char *encrypted = AESEncrypt((u_char*)s, PACKET_SIZE, server_aes_key, server_aes_iv, &size);
     for (const auto &client : clients) {   
         send(client->fd, encrypted, size, 0);
@@ -509,14 +510,14 @@ void *handle_client(void *arg) {
     send(cl->fd, p_welcome.serialize(), PACKET_SIZE, 0);
     while (cl->valid) {
         packet2 p;
-        u_char *data = new u_char[1552];
+        u_char *data = new u_char[PADDED_PACKET_SIZE];
         // int bytes = recv(cl->fd, msg, MAX_LEN, 0);
-        int bytes = recv(cl->fd, data, 1552, 0);
+        int bytes = recv(cl->fd, data, PADDED_PACKET_SIZE, 0);
         if (bytes <= 0)
             return 0;
         
         int size;
-        unsigned char* d = AESDecrypt(data, 1552, server_aes_key, server_aes_iv, &size);
+        unsigned char* d = AESDecrypt(data, PADDED_PACKET_SIZE, server_aes_key, server_aes_iv, &size);
         p = packet2::deserialize((char*)d);
         if (p.type == packet_type::MESSAGE) {
             if (filter_on) {

@@ -8,6 +8,7 @@ void cls (int sig) {
 
 int main()
 {
+    printf("%lu %lu", sizeof(long), sizeof(packet2));
     #ifndef DISABLE_UPDATE_CHECK
     if (checkForUpdate()) {
         #ifdef DEBUG

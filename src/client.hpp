@@ -18,7 +18,7 @@ void term(bool ab = false, const char* message = "")
         running = false;
         packet2 p(packet_type::CLIENT_CLOSE);
         char* s = p.serialize();
-        int size;
+        int size; 
         u_char* enc = AESEncrypt((u_char*)s, PACKET_SIZE, client_aes_key, client_aes_iv, &size);
         send(client_socket, enc, size, 0);
         // detach the threads
@@ -41,7 +41,10 @@ void *rcv(void *arg) {
         
         if (p.type == packet_type::MESSAGE) {
             //TODO: Implement a way to block users.
-            printf("%s\n", p.data);
+            struct tm *timeinfo = localtime(&p.timestamp);
+            char time_buff[9];
+            strftime(time_buff, sizeof(time_buff), "%H:%M:%S", timeinfo);
+            printf("[%s] %s\n", time_buff, p.data);
         } else if (p.type == packet_type::PRIVATE_MESSAGE) {
             printf("[<%s> -> <%s>]: %s\n", p.sender, p.receiver, p.data);
         } else if (p.type == packet_type::SERVER_CLIENT_KICK) {
@@ -78,7 +81,7 @@ void sendMessage(std::string msg) {
     packet2 p(msg.c_str(), id, "", packet_type::MESSAGE);
     char *data = p.serialize();
     int len;
-    u_char *encrypted = AESEncrypt ((u_char*)data, 1537, client_aes_key, client_aes_iv, &len);
+    u_char *encrypted = AESEncrypt ((u_char*)data, PACKET_SIZE, client_aes_key, client_aes_iv, &len);
     send(client_socket, encrypted, len, 0);
     delete[] data;
 }
