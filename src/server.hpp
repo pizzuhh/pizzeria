@@ -301,7 +301,7 @@ void *server_client(void *arg)
 
     return nullptr;
 }
-
+/*send message from client to other clients*/
 void sendMessage(char *msg, const client *sender)
 {
     char *out = new char[PACKET_SIZE];
@@ -319,6 +319,7 @@ void sendMessage(char *msg, const client *sender)
     delete[] s;
     delete[] out;
 }
+/*send message from server to all clients*/
 void sendMessage(const char *msg) {
     char *out = new char[snprintf(nullptr, 0, "%s: %s", "[SERVER]", msg)+1];
     sprintf(out, "%s: %s", "[SERVER]", msg);
@@ -334,6 +335,7 @@ void sendMessage(const char *msg) {
     delete[] s;
     delete[] out;
 }
+/*send formatted message from server to all clients*/
 void fsend_message(const char *format, ...) {
     char *out = new char[1024*2];
     char *tmp = new char[MAX_LEN];
@@ -357,6 +359,7 @@ void fsend_message(const char *format, ...) {
     delete[] out;  
     delete[] tmp;
 }
+/*send message from server to target client*/
 void send_target_message(const char *msg, const client *target) {
     char *out = new char[KiB(4)];
     sprintf(out, "%s: %s", "[SERVER]", msg);
@@ -370,6 +373,7 @@ void send_target_message(const char *msg, const client *target) {
     delete[] s;
     delete[] out;
 }
+/*send message from client to another client (PM)*/
 void sendMessage(char* msg, char* sender, char* receiver) {
     for (auto &it : clients) {
         if (!strcmp(receiver, it->username)) {
@@ -508,6 +512,7 @@ void *handle_client(void *arg) {
     p_welcome = packet2((welcome_msg.length() > 0) ? welcome_msg.c_str() : "", "",
                       "", (welcome_msg.length() > 0) ? packet_type::MESSAGE : packet_type::GENERIC);
     send(cl->fd, p_welcome.serialize(), PACKET_SIZE, 0);
+    fsend_message("%s: has joined!", cl->username);
     while (cl->valid) {
         packet2 p;
         u_char *data = new u_char[PADDED_PACKET_SIZE];
@@ -520,6 +525,9 @@ void *handle_client(void *arg) {
         unsigned char* d = AESDecrypt(data, PADDED_PACKET_SIZE, server_aes_key, server_aes_iv, &size);
         p = packet2::deserialize((char*)d);
         if (p.type == packet_type::MESSAGE) {
+            struct tm *timeinfo = localtime(&p.timestamp);
+            char time_buff[9];
+            strftime(time_buff, sizeof(time_buff), "%H:%M:%S", timeinfo);
             if (filter_on) {
                 if (!filterMessage(p.data)) {
                     printf("<%s>: %s\n", cl->username, p.data);
@@ -532,7 +540,7 @@ void *handle_client(void *arg) {
                     packet2 p_mod;
                     switch (filter_mode) {
                         case DO_NOT_SEND_MESSAGE:
-                            printf("!FILTERED <%s>: %s\n", cl->username, p.data);
+                            printf("!FILTERED [%s] <%s>: %s\n", time_buff, cl->username, p.data);
                             #ifdef LOG_MESSAGES
                             WRITELOG(INFO, formatString("flagged: %s: %s", cl->username, p.data));
                             #elif
@@ -541,7 +549,7 @@ void *handle_client(void *arg) {
                             send_target_message("Your message has been flagged by the filter!", cl);
                             break;
                         case KICK_USER:
-                            printf("!FILTERED <%s>: %s\n", cl->username, p.data);
+                            printf("!FILTERED [%s] <%s>: %s\n", time_buff, cl->username, p.data);
                             #ifdef LOG_MESSAGES
                             WRITELOG(INFO, formatString("flagged: %s: %s", cl->username, p.data));
                             #elif
@@ -552,7 +560,7 @@ void *handle_client(void *arg) {
                             send_p(p_mod, *cl);
                             break;
                         case BAN_USER: 
-                            printf("!FILTERED <%s>: %s\n", cl->username, p.data);
+                            printf("!FILTERED [%s] <%s>: %s\n", time_buff, cl->username, p.data);
                             #ifdef LOG_MESSAGES
                             WRITELOG(INFO, formatString("flagged: %s: %s", cl->username, p.data));
                             #elif
@@ -563,7 +571,7 @@ void *handle_client(void *arg) {
                             send_p(p_mod, *cl);
                             break;
                         default:
-                            printf("!FILTERED <%s>: %s\n", cl->username, p.data);
+                            printf("!FILTERED [%s] <%s>: %s\n", time_buff, cl->username, p.data);
                             #ifdef LOG_MESSAGES
                             WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
                             #elif
@@ -575,7 +583,7 @@ void *handle_client(void *arg) {
                 }
             } else {
                 WRITELOG(INFO, formatString("%s: %s", cl->username, p.data));
-                printf("<%s>: %s\n", cl->username, p.data);
+                printf("[%s] <%s>: %s\n", time_buff, cl->username, p.data);
                 sendMessage(p.data, cl);
             }
         }

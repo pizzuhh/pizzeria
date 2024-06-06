@@ -98,11 +98,13 @@ struct packet2 {
         strncpy(this->data,     data,       sizeof(this->data)-1);
         strncpy(this->sender,   sender,     sizeof(this->sender)-1);
         strncpy(this->receiver, receiver,   sizeof(this->receiver)-1);
+        this->timestamp = time(0);
     }
     packet2 (packet_type type) {
         this->type = type;
+        this->timestamp = time(0);
     }
-    packet2 (){}
+    packet2 (){this->timestamp = time(0);}
     char* serialize() {
         size_t size = sizeof(this->type) + sizeof(this->receiver) + sizeof(this->sender) + sizeof(this->data) + sizeof(packet2::timestamp);
         char* ret = new char[size];
