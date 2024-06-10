@@ -6,6 +6,6 @@
     "filter": {
         "enabled": false,
         "filter": [],
-        "mode": 1
+        "mode": 0
     }
 }
